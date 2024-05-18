@@ -1,3 +1,5 @@
+**Lightweight Retreival Augmented Generation**
+
 This repository implements a Response Augmentation Generation (RAG) model for contextualizing information retrieval from PDFs. Built using Gradio, the model takes a PDF document as input and leverages the Gemini API to generate a response.
 
 The model first processes the PDF through an embedding layer, converting textual information into a numerical representation. Cosine similarity is then employed to identify sections within the PDF that hold the most relevant context to the user's query. This contextualization process even incorporates chat history, ensuring the response considers the entire conversation thread.
