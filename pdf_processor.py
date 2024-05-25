@@ -8,6 +8,6 @@ def process_pdf(uploaded_pdf):
                 for page_num in range(len(pdf_reader.pages)):
                     page = pdf_reader.pages[page_num]
                     extracted_text += page.extract_text()
-                print(f"Extrracted text: {extracted_text}")
+                # print(f"Extrracted text: {extracted_text}")
             
     return extracted_text
