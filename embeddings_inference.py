@@ -3,6 +3,7 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np 
+from time import time 
 
 def retrieve_answer_from_gemini(PROMPT, question, original_data, vectors, chat_history_sentences, chat_history_vectors):
 	query_vector = generate_embeddings([question])
@@ -24,7 +25,7 @@ def retrieve_answer_from_gemini(PROMPT, question, original_data, vectors, chat_h
 	print(f"\n\nPrompt:'''{prompt}'''")
 	
 	response = generate(prompt)
-	print(f"\nGemini response:{response}")
+	print(f"\nGemini response: {response}")
 	
 	return response
 
@@ -34,8 +35,26 @@ def generate(prompt):
 	return result.content
 
 def generate_embeddings(texts):
-	embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
-	vector = embeddings.embed_documents(texts)
+	print(f"Generating embeddings for {len(texts)} sentences.")
+	start_time = time()
+
+	vector = []
+	batch_size = 100
+
+	embeddings_model = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
+
+	for batch_start in range(0, len(texts), batch_size):
+		batch_end = min(batch_start + batch_size, len(texts))
+		print(f"Embedding batch: {batch_start} to {batch_end}")
+
+		batch = texts[ batch_start:  batch_end]
+		print(f"Batch size: {len(batch)}")
+
+		vector.extend( embeddings_model.embed_documents(batch) )
+
+	end_time = time()
+
+	print(f"Generated embeddings in {end_time-start_time} seconds.")
 	return vector
 
 def generate_query_embedding(query_text):
@@ -44,13 +63,19 @@ def generate_query_embedding(query_text):
 	return query_vector
 
 def find_closest_embeddings(query_vector, embeddings):
-    similarities = cosine_similarity(embeddings, query_vector)
+	print(f"Finding close matches for query among {len(embeddings)} embeddings.")
+	start_time = time()
 
-    sorted_data = np.column_stack((similarities, np.arange(len(similarities))))  
-    sorted_data = sorted_data[sorted_data[:, 0].argsort()[::-1]] 
+	similarities = cosine_similarity(embeddings, query_vector)
+	end_time = time()
 
-    top_5_indices = sorted_data[:5, 1].astype(int) 
-    return top_5_indices
+	print(f"Generated close matches in {end_time - start_time} seconds.")
+
+	sorted_data = np.column_stack((similarities, np.arange(len(similarities))))  
+	sorted_data = sorted_data[sorted_data[:, 0].argsort()[::-1]] 
+
+	top_5_indices = sorted_data[:5, 1].astype(int) 
+	return top_5_indices
 
 def fetch_relevant_data(query_vector, embeddings, original_texts):
 	most_relevant_indexes = find_closest_embeddings(query_vector, embeddings)
