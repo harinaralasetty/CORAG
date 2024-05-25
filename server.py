@@ -10,6 +10,9 @@ from config import config
 # set google vertex key 
 os.environ["GOOGLE_API_KEY"] = config["google_vertex_key"]
 
+SIMILARITY_MODE = os.environ.get("SIMILARITY_MODE")
+print(f"Starting in '{SIMILARITY_MODE}' similarity mode...")
+
 # read base prompt 
 with open("base_prompt.txt", "r") as prompt_file:
     PROMPT = "".join( prompt_file.readlines() )
@@ -46,8 +49,7 @@ async def rag_application_function(uploaded_pdf, question):
         finally: 
             context = extracted_text
             original_data = context.split('.')
-            vectors.extend(generate_embeddings(original_data))
-            print("Len of original data: ", len(original_data))
+            vectors = generate_embeddings(original_data, vectors = vectors) 
 
     # inference
     message_id = len(chat_history['messages'])  
@@ -69,7 +71,7 @@ async def rag_application_function(uploaded_pdf, question):
     chat_text = get_clean_chat_history(chat_history)
 
     # add new chat to chat embeddings 
-    chat_history_vectors.extend(generate_embeddings([format_exchange(new_exchange)] ))
+    chat_history_vectors = generate_embeddings([format_exchange(new_exchange)], chat_history_vectors)
 
     # Return the chat history and the download link
     return chat_text, gr.Button("Export Chat", link='/file=chat_history.txt')
