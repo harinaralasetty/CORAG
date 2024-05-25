@@ -4,6 +4,8 @@ This repository implements a Response Augmentation Generation (RAG) model for co
 
 The model first processes the PDF through an embedding layer, converting textual information into a numerical representation. Cosine similarity is then employed to identify sections within the PDF that hold the most relevant context to the user's query. This contextualization process even incorporates chat history, ensuring the response considers the entire conversation thread.
 
+Added Hierarchical Navigable Small World (HNSW) support for retrieval boosting retrieval speed. In my test I have uploaded a research paper having 1800 words, with normal consine similarity it took 0.5 seconds for fetching relevant context. With HNSW it took 0.0012 seconds. 
+
 Flow: 
 ![flow chart](https://github.com/harinaralasetty/Retrieval_Augmented_Generation/blob/main/RAG%20+%20HNSW.png)
 
