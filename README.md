@@ -12,6 +12,7 @@ Flow:
 To run: 
 1. Install requirements on your python env.
 2. Get Google Vertex API key from https://aistudio.google.com/app/apikey and insert in config.json
-3. Run server.py
+3. Set retrieval mode to 'cosine' or 'hnsw' in config.json (hnsw is the default and faster)
+4. Run server.py
 
 ![alt text](https://github.com/harinaralasetty/Retrieval_Augmented_Generation/blob/main/RAG%20Local%20Screenshot.png)
