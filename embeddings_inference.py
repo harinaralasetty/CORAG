@@ -45,7 +45,6 @@ def generate_query_embedding(query_text):
 
 def find_closest_embeddings(query_vector, embeddings):
     similarities = cosine_similarity(embeddings, query_vector)
-    similarities = cosine_similarity(embeddings, query_vector)
 
     sorted_data = np.column_stack((similarities, np.arange(len(similarities))))  
     sorted_data = sorted_data[sorted_data[:, 0].argsort()[::-1]] 
