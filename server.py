@@ -7,9 +7,6 @@ from pdf_processor import process_pdf
 
 from config import config 
 
-# set google vertex key 
-os.environ["GOOGLE_API_KEY"] = config["google_vertex_key"]
-
 SIMILARITY_MODE = os.environ.get("SIMILARITY_MODE")
 print(f"Starting in '{SIMILARITY_MODE}' similarity mode...")
 

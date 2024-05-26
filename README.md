@@ -15,4 +15,4 @@ To run:
 3. Set retrieval mode to 'cosine' or 'hnsw' in config.json (hnsw is the default and faster)
 4. Run server.py
 
-![alt text](https://github.com/harinaralasetty/Retrieval_Augmented_Generation/blob/main/RAG%20Local%20Screenshot.png)
+![alt text](https://github.com/harinaralasetty/Retrieval_Augmented_Generation/blob/main/screenshot.png)
