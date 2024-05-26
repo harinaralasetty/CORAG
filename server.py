@@ -1,7 +1,8 @@
 import gradio as gr
 import os 
 
-from embeddings_inference import generate_embeddings, retrieve_answer_from_gemini
+from embeddings_indexing import generate_embeddings
+from inference import retrieve_answer_from_gemini
 from chat_utils import export_chat_history, get_chat_history, get_clean_chat_history, format_exchange
 from pdf_processor import process_pdf
 
