@@ -1,5 +1,5 @@
 {
-    "google_api_key": "AIzaSyCId7MwvWlYSU5MJu_ghKu1EPkIcD6USxk", 
+    "google_api_key": "", 
     "title": "Retrieval Augmented Generation on Any Machine",
     "description": "Upload a PDF document and ask your question. Answers will be retrieved from the document and enhanced by the Gemini large language model.",
     "similarity_mode": "hnsw"
