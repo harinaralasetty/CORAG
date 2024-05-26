@@ -8,6 +8,8 @@ from pdf_processor import process_pdf
 
 from config import config 
 
+CWD = os.getcwd()
+
 SIMILARITY_MODE = os.environ.get("SIMILARITY_MODE")
 print(f"Starting in '{SIMILARITY_MODE}' similarity mode...")
 
@@ -27,7 +29,7 @@ processed_pdf_name = ""
 
 # Export chat option (optional)
 export_button = gr.Button(value="Export Chat")
-export_button.click = lambda: export_chat_history(chat_history)
+export_button.click = lambda: export_chat_history("")
 
 async def rag_application_function(uploaded_pdf, question):
     # use global variables 
@@ -68,11 +70,14 @@ async def rag_application_function(uploaded_pdf, question):
     # Format chat history for display
     chat_text = get_clean_chat_history(chat_history)
 
+    # Call export_chat_history directly with chat_history
+    export_chat_history(chat_text)
+
     # add new chat to chat embeddings 
     chat_history_vectors = generate_embeddings([format_exchange(new_exchange)], chat_history_vectors)
 
     # Return the chat history and the download link
-    return chat_text, gr.Button("Export Chat", link='/file=chat_history.txt')
+    return chat_text, gr.Button("Export Chat", link=f'/file={CWD}/chat_history.txt')
 
 interface = gr.Interface(
     fn=rag_application_function,
@@ -82,4 +87,4 @@ interface = gr.Interface(
     description= config["description"]
 )
 
-interface.launch(allowed_paths=["/"])
+interface.launch(allowed_paths=[f"{CWD}/"])
