@@ -10,12 +10,13 @@ Added Hierarchical Navigable Small World (HNSW) support for retrieval boosting r
 Now added tool support with search capabilities. The language model (LLM) can now utilize these tools to retrieve accurate information, delivering clear answers accompanied by a source reference for transparency.
 
 Flow: 
-![flow chart](https://github.com/harinaralasetty/Retrieval_Augmented_Generation/blob/main/RAG%20+%20HNSW.png)
+![alt text](https://github.com/harinaralasetty/Retrieval_Augmented_Generation/blob/main/RAG%20-%2010:08:2024.png)
 
 To run: 
 1. Install requirements on your python env.
 2. Get Google Vertex API key from https://aistudio.google.com/app/apikey and insert in config.json
 3. Set retrieval mode to 'cosine' or 'hnsw' in config.json (hnsw is the default and faster)
-4. Run server.py
+4. Get SerperAPI key to use Search Tool from https://serpapi.com/dashboard
+5. Run server.py
 
-![alt text](https://github.com/harinaralasetty/Retrieval_Augmented_Generation/blob/main/screenshot.png)
+![alt text](https://github.com/harinaralasetty/Retrieval_Augmented_Generation/blob/main/Screenshot.png)
