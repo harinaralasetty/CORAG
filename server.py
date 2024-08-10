@@ -6,16 +6,12 @@ from inference import retrieve_answer_from_gemini
 from chat_utils import export_chat_history, get_chat_history, get_clean_chat_history, format_exchange
 from pdf_processor import process_pdf
 
-from config import config 
+from config import config, PROMPT
 
 CWD = os.getcwd()
 
 SIMILARITY_MODE = os.environ.get("SIMILARITY_MODE")
 print(f"Starting in '{SIMILARITY_MODE}' similarity mode...")
-
-# read base prompt 
-with open("base_prompt.txt", "r") as prompt_file:
-    PROMPT = "".join( prompt_file.readlines() )
 
 # global variables 
 chat_history = {'messages': []}
