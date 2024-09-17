@@ -1,3 +1,6 @@
 config.json
 *.pyc
 __pycache__/
+.venv/
+chat_history.txt
+.vscode/launch.json

@@ -1,12 +1,16 @@
 import json 
 import os 
 
-with open("config.json") as config_file:
-    config = json.load(config_file)
+APP_TITLE = "Retrieval Augmented Generation on Any Machine"
+DESCRIPTION = "Upload a PDF document and ask your question. Answers will be retrieved from the document and enhanced by the Gemini large language model."
 
-os.environ["SIMILARITY_MODE"] = config["similarity_mode"]
-os.environ["GOOGLE_API_KEY"] = config["google_api_key"]
-os.environ["SERPER_API_KEY"] = config["serper_api_key"]
+GOOGLE_API_KEY = os.environ["GOOGLE_API_KEY"] = ""
+SERPER_API_KEY = os.environ["SERPER_API_KEY"] = ""
+
+HNSW_CONFIG = {
+    "ef_construction": 500,
+    "M": 30
+}
 
 # read base prompt 
 with open("base_prompt.txt", "r") as prompt_file:

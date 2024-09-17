@@ -51,13 +51,11 @@ def generate_gemini_response(prompt):
 		chain = llm_with_tools | call_tools
 		result = chain.invoke(prompt)
 
-		print("Rsult", result)
+		# print("Gemini response:", result)
 		# return result[0]['output']
 		return result.content
 	
 	except Exception as e: 
-		print("Error:", str(e))
-		print("Using direct LLM response without tools.")
 		result = llm.invoke(prompt)
 		return result.content
 

@@ -6,12 +6,12 @@ from inference import retrieve_answer_from_gemini
 from chat_utils import export_chat_history, get_chat_history, get_clean_chat_history, format_exchange
 from pdf_processor import process_pdf
 
-from config import config, PROMPT
+import config
+
+# from chunking import initiate_chunking
 
 CWD = os.getcwd()
 
-SIMILARITY_MODE = os.environ.get("SIMILARITY_MODE")
-print(f"Starting in '{SIMILARITY_MODE}' similarity mode...")
 
 # global variables 
 chat_history = {'messages': []}
@@ -53,7 +53,7 @@ async def rag_application_function(uploaded_pdf, question):
         'id': message_id,
         'user': question,
         'answer': retrieve_answer_from_gemini(
-            PROMPT, 
+            config.PROMPT, 
             question, 
             original_data, 
             vectors, 
@@ -79,8 +79,8 @@ interface = gr.Interface(
     fn=rag_application_function,
     inputs=[gr.File(label="Upload PDF Document"), gr.Textbox(label="Ask a Question")],
     outputs=[gr.Text(label="Chat History"), gr.Button(value="Export Chat")],
-    title= config["title"],
-    description= config["description"]
+    title= config.APP_TITLE,
+    description= config.DESCRIPTION
 )
 
 interface.launch(allowed_paths=[f"{CWD}/"])

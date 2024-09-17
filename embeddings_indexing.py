@@ -8,14 +8,11 @@ import hnswlib
 import os 
 from math import ceil
 
-SIMILARITY_MODE = os.environ.get("SIMILARITY_MODE")
-embeddings_model = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
 
+embeddings_model = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
 
 def initialize_hnsw_indexing(vectors):
 
-    # Assuming vectors is a list of lists, where each inner list represents a vector
-    # Calculate the dimensionality by finding the maximum length of the vectors
 	global hnswlib_indexing
 
 	# Convert the list to a NumPy array
@@ -26,7 +23,10 @@ def initialize_hnsw_indexing(vectors):
 
 	# Create a new index
 	hnswlib_indexing = hnswlib.Index(space='cosine', dim=dimension)
-	hnswlib_indexing.init_index(max_elements=10000, ef_construction=200, M=16)
+	hnswlib_indexing.init_index(
+		max_elements=10000, 
+		ef_construction=config.HNSW_CONFIG["ef_construction"], 
+		M=config.HNSW_CONFIG["M"])
 
 	# Add each vector as a single element array
 	for vector in vectors:
@@ -36,9 +36,11 @@ def initialize_hnsw_indexing(vectors):
 
 	return hnswlib_indexing
 
-def generate_embeddings(texts, vectors = []):
-	global SIMILARITY_MODE, embeddings_model
-
+def generate_embeddings(texts, vectors = [], window_size=2):
+	global embeddings_model
+	window_size = min(window_size, len(texts))
+	texts = overlapping_texts = [' '.join(texts[i:i+window_size]) for i in range(len(texts) - window_size + 1)]
+	
 	print(f"\nGenerating embeddings for {len(texts)} sentences.")
 	start_time = time()
 
@@ -57,54 +59,28 @@ def generate_embeddings(texts, vectors = []):
 
 	print(f"\nGenerated embeddings in {end_time-start_time} seconds.")
 
-	# adding vectors to hnswlib index if similarity mode is hnsw
-	if SIMILARITY_MODE == "cosine":
-		vectors.extend(vector_lst)
-	if SIMILARITY_MODE == "hnsw":
-		# initialize the first time 
-		if vectors == []:
-			vectors = initialize_hnsw_indexing(vector_lst)
-		else: 
-			vectors.add_items(vector_lst)
+	# adding vectors to hnswlib index 
+	if vectors == []: vectors = initialize_hnsw_indexing(vector_lst);
+	else: vectors.add_items(vector_lst);
 
-	return vectors
+	return vectors #/ np.linalg.norm(vectors, axis=1, keepdims=True)
 
 def generate_query_embedding(query_text):
 	global embeddings_model
 	query_vector = embeddings_model.embed_documents([query_text]) 
 	return query_vector
 
-def find_closest_embeddings(query_vector, embeddings):
-	# for normal cosine 
-	print(f"Finding close matches for query among {len(embeddings)} embeddings.")
-	start_time = time()
-
-	similarities = cosine_similarity(embeddings, query_vector)
-	end_time = time()
-
-	print(f"\n\nGenerated close matches in {end_time - start_time} seconds in '{SIMILARITY_MODE}' mode..")
-
-	sorted_data = np.column_stack((similarities, np.arange(len(similarities))))  
-	sorted_data = sorted_data[sorted_data[:, 0].argsort()[::-1]] 
-
-	top_5_indices = sorted_data[:5, 1].astype(int) 
-	return top_5_indices
-
 def find_closest_embeddings_hnsw(query_vector, embeddings):
 	# for hnsl
 	start_time = time()
 	labels, distances = embeddings.knn_query(query_vector, k= min(5, len(embeddings.get_ids_list()) ))
 	end_time = time()
-	print(f"\n\nGenerated close matches in {end_time - start_time} seconds in '{SIMILARITY_MODE}' mode..")
+	print(f"\n\nFound close matches in {end_time - start_time} seconds...")
 	return labels[0]
 
 def fetch_relevant_data(query_vector, embeddings, original_texts):
-	global SIMILARITY_MODE
 
-	if SIMILARITY_MODE == "cosine":
-		most_relevant_indexes = find_closest_embeddings(query_vector, embeddings)
-	elif SIMILARITY_MODE == "hnsw":
-		most_relevant_indexes = find_closest_embeddings_hnsw(query_vector, embeddings)
+	most_relevant_indexes = find_closest_embeddings_hnsw(query_vector, embeddings)
 	
 	relevant_context = "".join([original_texts[x] for x in most_relevant_indexes])
 	print(f"\n\nRelevant Context:'{relevant_context}'")
