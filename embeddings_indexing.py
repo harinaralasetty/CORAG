@@ -36,10 +36,28 @@ def initialize_hnsw_indexing(vectors):
 
 	return hnswlib_indexing
 
-def generate_embeddings(texts, vectors = [], window_size=2):
-	global embeddings_model
-	window_size = min(window_size, len(texts))
-	texts = overlapping_texts = [' '.join(texts[i:i+window_size]) for i in range(len(texts) - window_size + 1)]
+def generate_embeddings(texts, vectors = [], ):
+
+	# Retrieve chunking settings from config
+	chunk_size = min(config.CHUNK_SETTINGS["CHUNK_SIZE"], len(texts))
+	chunk_overlap = min(config.CHUNK_SETTINGS["CHUNK_OVERLAP"], len(texts)-1)
+
+	# Validate chunking settings
+	if chunk_overlap > chunk_size:
+		raise ValueError("chunk_overlap must be smaller than chunk_size for proper chunking.")
+
+	overlapping_texts = []
+
+	# Iterate through the text with a step size of chunk_size - chunk_overlap to create overlapping chunks
+	for i in range(0, len(texts) - chunk_size + 1, chunk_size - chunk_overlap):
+		chunk = ' '.join(texts[i:i + chunk_size])
+		overlapping_texts.append(chunk)
+
+	# If no chunks were generated (possible when chunk_size is too large)
+	if not overlapping_texts:
+		raise ValueError("No chunks were generated. Check chunk_size and chunk_overlap settings.")
+
+	texts = overlapping_texts
 	
 	print(f"\nGenerating embeddings for {len(texts)} sentences.")
 	start_time = time()

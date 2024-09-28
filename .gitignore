@@ -4,3 +4,5 @@ __pycache__/
 .venv/
 chat_history.txt
 .vscode/launch.json
+plan.txt
+config.py
