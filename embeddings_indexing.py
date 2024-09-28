@@ -96,11 +96,20 @@ def find_closest_embeddings_hnsw(query_vector, embeddings):
 	print(f"\n\nFound close matches in {end_time - start_time} seconds...")
 	return labels[0]
 
+def rerank_results(query_vector, candidate_vectors, candidate_indexes):
+	
+    # Calculate cosine similarity for re-ranking
+    similarity_scores = cosine_similarity(query_vector, candidate_vectors)[0]  
+    ranked_indexes = np.argsort(similarity_scores)[::-1]  
+    return [candidate_indexes[i] for i in ranked_indexes]  
+
 def fetch_relevant_data(query_vector, embeddings, original_texts):
 
 	most_relevant_indexes = find_closest_embeddings_hnsw(query_vector, embeddings)
-	
-	relevant_context = "".join([original_texts[x] for x in most_relevant_indexes])
+	candidate_vectors = [embeddings.get_items([index])[0] for index in most_relevant_indexes]
+	reranked_indexes = rerank_results(query_vector, candidate_vectors, most_relevant_indexes)
+
+	relevant_context = "".join([original_texts[x] for x in reranked_indexes])
 	print(f"\n\nRelevant Context:'{relevant_context}'")
 	return relevant_context
 
