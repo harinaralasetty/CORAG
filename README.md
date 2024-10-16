@@ -5,7 +5,7 @@ This repository implements a Response Augmentation Generation (RAG) model for co
 The model first processes the PDF through an embedding layer, converting textual information into a numerical representation. HNSW indexing with cosine similarity is then employed to identify sections within the PDF that hold the most relevant context to the user's query. This contextualization process even incorporates chat history, ensuring the response considers the entire conversation thread. Reranking is added for further enhancement in retrieval. 
 
 Flow: 
-![alt text](https://github.com/harinaralasetty/Retrieval_Augmented_Generation/blob/main/RAG%20-%2028%20Sep%202024.png)
+![alt text](https://github.com/harinaralasetty/Retrieval_Augmented_Generation/blob/main/Flowchart.png)
 
 To run: 
 1. Install requirements on your python env.
