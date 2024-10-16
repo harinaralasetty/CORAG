@@ -59,7 +59,7 @@ def generate_embeddings(texts, vectors = [], ):
 
 	texts = overlapping_texts
 	
-	print(f"\nGenerating embeddings for {len(texts)} sentences.")
+	print(f"\nGenerating embeddings for {len(texts)} chunks.")
 	start_time = time()
 
 	vector_lst = []
@@ -110,6 +110,5 @@ def fetch_relevant_data(query_vector, embeddings, original_texts):
 	reranked_indexes = rerank_results(query_vector, candidate_vectors, most_relevant_indexes)
 
 	relevant_context = "".join([original_texts[x] for x in reranked_indexes])
-	print(f"\n\nRelevant Context:'{relevant_context}'")
 	return relevant_context
 

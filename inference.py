@@ -9,6 +9,8 @@ from langchain_core.runnables import (
     Runnable,
 )
 
+from langchain_core.prompts import ChatPromptTemplate
+
 tools = [multiply, search]
 tool_map = {tool.name: tool for tool in tools}
 
@@ -30,7 +32,6 @@ def call_tools(msg: AIMessage) -> Runnable:
 
 	tool_output = tool_call["output"]
 	# new_prompt = f"The result of {tool_call}. Answer the query clearly based on the the tool's output. "
-	print(f"PROMPT: \n{PROMPT}")
 	new_prompt = PROMPT.format(
 		context = "", 
 		question = "", 
@@ -51,19 +52,46 @@ def generate_gemini_response(prompt):
 		chain = llm_with_tools | call_tools
 		result = chain.invoke(prompt)
 
-		# print("Gemini response:", result)
-		# return result[0]['output']
 		return result.content
 	
 	except Exception as e: 
 		result = llm.invoke(prompt)
 		return result.content
 
+def rephrase_prompt(prompt, document_theme):
+	rephrasal_request = f"""
+	You are a question rephraser. Your task is to rephrase the given question in a way that improves retrieval quality, considering the provided document theme.
 
-def retrieve_answer_from_gemini(PROMPT, question, original_data, vectors, chat_history_sentences, chat_history_vectors):
+	- Question: {prompt}
+	- Document Theme: {document_theme}
+
+	Please return only the rephrased question, ensuring it is not more specific than the original.
+	"""
+
+
+	print(f"```\n{rephrasal_request}\n```")
+
+	rephrased_prompt = generate_gemini_response(rephrasal_request)
+	print("REPHRASED", rephrased_prompt)
+
+	return rephrased_prompt
+
+
+def retrieve_answer_from_gemini(PROMPT, question, original_data, 
+								vectors, chat_history_sentences, chat_history_vectors, 
+								document_theme = None):
 	query_vector = generate_query_embedding(question)
 	relevant_context = ""
 	relevant_chat_history = ""
+
+	# rephrase prompt 
+	new_prompt = rephrase_prompt(question, document_theme)
+	
+	# fetch data with rephrased question
+	print(f"\nGemini response: {new_prompt}\n")
+	query_vector = generate_query_embedding(new_prompt)
+
+
 
 	# fetch relevant contextual data if exists 
 	if len(original_data):

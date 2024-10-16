@@ -31,4 +31,5 @@ def process_pdf(uploaded_pdf):
     with open("extracted_text.txt", 'w+') as txt_file:
            txt_file.writelines(extracted_text)
             
-    return extracted_text
+    document_theme = extracted_text[:2000]
+    return extracted_text, document_theme

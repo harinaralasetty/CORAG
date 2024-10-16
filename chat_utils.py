@@ -16,7 +16,6 @@ def get_clean_chat_history(chat_history):
     )
 
 def export_chat_history(chat_text):
-    print('RECEIEVED 18', chat_text)
     # Save chat history to a text file
     with open("chat_history.txt", "w+") as f:
         f.write(f"Chat History:\n{chat_text}")

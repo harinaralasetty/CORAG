@@ -19,6 +19,7 @@ chat_history_vectors = []
 
 original_data = []
 vectors = []
+document_theme = None
 
 pdf_processed = False 
 processed_pdf_name = ""
@@ -34,7 +35,7 @@ async def rag_application_function(uploaded_pdf, question):
     # process the uploaded file
     if uploaded_pdf and pdf_processed == False and uploaded_pdf.name!=processed_pdf_name: 
         try:
-            extracted_text = process_pdf(uploaded_pdf)
+            extracted_text, document_theme = process_pdf(uploaded_pdf)
             pdf_processed = True 
             processed_pdf_name = uploaded_pdf.name 
 
@@ -59,6 +60,7 @@ async def rag_application_function(uploaded_pdf, question):
             vectors, 
             get_chat_history(chat_history),
             chat_history_vectors,
+            document_theme
             )
     }
     chat_history['messages'].append(new_exchange)
