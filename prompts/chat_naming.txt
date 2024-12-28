@@ -1,0 +1,18 @@
+Based on the provided request and response, generate a concise and relevant name for the chat that captures the essence of the interaction.
+
+Request: 
+```
+{}
+```
+
+Response: 
+```
+{}
+```
+
+Guidelines: 
+- Focus on the key topic or purpose of the conversation.
+- Keep the name short and descriptive (e.g., "Travel Tips for Italy" or "Fixing a Python Script").
+- Avoid overly generic names like "Help Request" unless the topic truly lacks specificity.
+- Aim for clarity and relevance to make the name immediately understandable.
+- Do not include "*"
