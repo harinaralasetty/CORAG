@@ -32,7 +32,7 @@ The RAG model processes both PDF documents and audio files by first converting t
    ```
 
 2. Configure API keys in `config.py`:
-   - Set your Google Vertex API key.
+   - Set your Google Vertex API key from [Google AI Studio](https://aistudio.google.com/)
    - Set your Serper API key from [SerpAPI Dashboard](https://serpapi.com/dashboard) if you intend to use the search tool.
 
 3. Adjust chunk settings in `config.py` as needed.
