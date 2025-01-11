@@ -1,6 +1,6 @@
 import streamlit as st
 from inference.inference_manager import process_answer, process_embeddings
-from chat_management.chat_utils import get_chat_history
+from chat_management.chat_utils import load_chat_threads_info, save_chat_threads_info, get_chat_history, cleanup_temp_dir
 from preprocessing.pdf_processor import process_pdf
 from preprocessing.audio_processor import transcribe_audio
 from preprocessing.prompt_processor import chat_namer
@@ -10,6 +10,10 @@ import uuid
 import base64
 from datetime import datetime
 from cosmetics import apply_cosmetics, get_random_greeting
+import atexit
+
+# Register cleanup function to remove temp file when server is terminated.
+atexit.register(cleanup_temp_dir)
 
 # --------- Streamlit Page Configuration ---------
 st.set_page_config(
@@ -31,7 +35,7 @@ apply_cosmetics()
 
 # --------- Initialize Session States ---------
 if 'chat_threads' not in st.session_state:
-    st.session_state.chat_threads = {}
+    st.session_state.chat_threads = load_chat_threads_info()
 
 if 'current_thread' not in st.session_state:
     st.session_state.current_thread = None
@@ -262,6 +266,7 @@ if user_question:
 
             # Update last_updated_at
             current_thread["last_updated_at"] = datetime.now().isoformat()
+            save_chat_threads_info(st.session_state.chat_threads)
 
             st.rerun()  # Refresh the UI
 
