@@ -1,11 +1,13 @@
 config.json
+.env
+.DS_Store
 *.pyc
 __pycache__/
 .venv/
 chat_history.txt
 .vscode/launch.json
 plan.txt
-config.py
 extracted_text.txt
 chat_history.txt
 ./test_files
+temp_data/

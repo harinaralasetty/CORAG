@@ -1,7 +1,15 @@
-import os 
+import os
+from dotenv import load_dotenv
 
-GOOGLE_API_KEY = os.environ["GOOGLE_API_KEY"] = ""
-SERPER_API_KEY = os.environ["SERPER_API_KEY"] = ""
+load_dotenv()
+
+GOOGLE_API_KEY = os.environ["GOOGLE_API_KEY"]
+SERPER_API_KEY = os.environ["SERPER_API_KEY"]
+ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
+VOYAGE_API_KEY = os.environ.get("VOYAGE_API_KEY", "")
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
+
+EMBEDDING_PROVIDERS = ["google", "voyage", "openai", "local"]
 
 HNSW_CONFIG = {
     "ef_construction": 500,
@@ -31,4 +39,14 @@ LAST_N = 2 # last n messages to send to the llm
 # theme length
 THEME_LENGTH = 2000 # first n characters to determine theme
 
-models_list = ["gemini-pro", "gemini-1.5-flash", "gemini-exp-1206", "gemini-2.0-flash-exp", "gemini-2.0-flash-thinking-exp-1219"]
+models_list = [
+    "gemini-2.5-flash",
+    "gemini-2.5-pro",
+    "gemini-2.5-flash-lite",
+    "gemini-2.0-flash",
+    "gemini-flash-latest",
+    "gemini-pro-latest",
+    "claude-haiku-4-5-20251001",
+    "claude-sonnet-4-6",
+    "claude-opus-4-7",
+]

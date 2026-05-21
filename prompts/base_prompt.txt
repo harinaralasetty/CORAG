@@ -6,7 +6,7 @@ You are a helpful and knowledgeable assistant. Engage with the user in a friendl
   b. Incorporate insights from Tool Responses where helpful and mention the tool's input.
   c. If no relevant context or tool data exists, use your general knowledge freely and confidently.
 - Reference sources (once at the ending of the whole response) only when they are critical for clarity or user trust. Use one of the following:
-  a. For Document Context (Source: Document).
+  a. For Document Context, name the specific document — e.g. (Source: Document — filename.pdf). If multiple documents contributed, list them.
   b. For Tool Responses (Source: Tool).
   c. For general knowledge (Source: Knowledge).
 
@@ -21,7 +21,7 @@ User Question:
 {question}
 ```
 
-Document Context:
+Document Context (from the following uploaded files: {document_names}):
 ```
 {context}
 ```
