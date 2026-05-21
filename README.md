@@ -1,6 +1,6 @@
 # Completely OpenSource Retrieval Augmented Generation (CORAG)
 
-This repository implements a Retrieval Augmented Generation (RAG) model enhanced with an Agent-based architecture for contextualizing information retrieval from PDF documents, audio files, and conversational history. The model leverages Large Language Models (currently supporting the Gemini API) integrated with a dynamic toolkit, enabling advanced responses and calculations. Built using Streamlit, this system is designed to provide accurate, context-aware responses.
+This repository implements a Retrieval Augmented Generation (RAG) model enhanced with an Agent-based architecture for contextualizing information retrieval from PDF documents, audio files, and conversational history. The model leverages Large Language Models (Google Gemini and Anthropic Claude) integrated with a dynamic toolkit, enabling advanced responses and calculations. Embeddings can be generated via Google, Voyage AI, OpenAI, or a local sentence-transformers model. Built with NiceGUI for a modern chat interface.
 
 ## Overview
 
@@ -31,9 +31,15 @@ The RAG model processes both PDF documents and audio files by first converting t
    pip install -r requirements.txt
    ```
 
-2. Configure API keys in `config.py`:
-   - Set your Google Vertex API key from [Google AI Studio](https://aistudio.google.com/)
-   - Set your Serper API key from [SerpAPI Dashboard](https://serpapi.com/dashboard) if you intend to use the search tool.
+2. Create a `.env` file in the project root with your API keys:
+   ```
+   GOOGLE_API_KEY=your_google_key       # from https://aistudio.google.com/
+   SERPER_API_KEY=your_serper_key       # from https://serpapi.com/dashboard (search tool)
+   ANTHROPIC_API_KEY=your_anthropic_key # optional, for Claude models — https://console.anthropic.com/
+   VOYAGE_API_KEY=your_voyage_key       # optional, for Voyage embeddings — https://dash.voyageai.com/
+   OPENAI_API_KEY=your_openai_key       # optional, for OpenAI embeddings — https://platform.openai.com/
+   ```
+   Only `GOOGLE_API_KEY` and `SERPER_API_KEY` are required. The rest are optional and only need to be set if you select that provider in the UI. For local embeddings (`sentence-transformers`), no key is needed.
 
 3. Adjust chunk settings in `config.py` as needed.
 
@@ -42,8 +48,10 @@ The RAG model processes both PDF documents and audio files by first converting t
 To start the server, execute:
 
 ```bash
-streamlit run server_streamlit.py
+python server.py
 ```
+
+Then open [http://localhost:8080](http://localhost:8080) in your browser.
 
 ## Screenshots
 
