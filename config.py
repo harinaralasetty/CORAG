@@ -4,7 +4,9 @@ from dotenv import load_dotenv
 load_dotenv()
 
 GOOGLE_API_KEY = os.environ["GOOGLE_API_KEY"]
-SERPER_API_KEY = os.environ["SERPER_API_KEY"]
+SERPER_API_KEY = os.environ.get("SERPER_API_KEY", "")
+TAVILY_API_KEY = os.environ.get("TAVILY_API_KEY", "")
+SEARCH_PROVIDER = os.environ.get("SEARCH_PROVIDER", "serpapi")
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
 VOYAGE_API_KEY = os.environ.get("VOYAGE_API_KEY", "")
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
