@@ -111,6 +111,7 @@ scikit-learn==1.6.0
 scipy==1.14.1
 sentence-transformers==5.5.1
 serpapi==0.1.5
+tavily-python
 setuptools==81.0.0
 shellingham==1.5.4
 simple-websocket==1.1.0
