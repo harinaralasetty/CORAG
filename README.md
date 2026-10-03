@@ -35,11 +35,13 @@ The RAG model processes both PDF documents and audio files by first converting t
    ```
    GOOGLE_API_KEY=your_google_key       # from https://aistudio.google.com/
    SERPER_API_KEY=your_serper_key       # from https://serpapi.com/dashboard (search tool)
+   SEARCH_PROVIDER=serpapi             # set to tavily to use Tavily search
+   TAVILY_API_KEY=your_tavily_key       # required for Tavily — https://app.tavily.com
    ANTHROPIC_API_KEY=your_anthropic_key # optional, for Claude models — https://console.anthropic.com/
    VOYAGE_API_KEY=your_voyage_key       # optional, for Voyage embeddings — https://dash.voyageai.com/
    OPENAI_API_KEY=your_openai_key       # optional, for OpenAI embeddings — https://platform.openai.com/
    ```
-   Only `GOOGLE_API_KEY` and `SERPER_API_KEY` are required. The rest are optional and only need to be set if you select that provider in the UI. For local embeddings (`sentence-transformers`), no key is needed.
+   `GOOGLE_API_KEY` is required. Search defaults to SerpAPI and requires `SERPER_API_KEY`; to use Tavily, set `SEARCH_PROVIDER=tavily` and provide `TAVILY_API_KEY` instead. The other keys are optional and only need to be set if you select that provider in the UI. For local embeddings (`sentence-transformers`), no key is needed.
 
 3. Adjust chunk settings in `config.py` as needed.
 
