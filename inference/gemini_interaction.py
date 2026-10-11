@@ -12,4 +12,4 @@ def generate_gemini_response(prompt, model):
         return get_model_instance(model).invoke(prompt).content
     except Exception as e:
         print(f"Error in Gemini interaction: {e}")
-        return "Sorry, I couldn't process your request."
+        return f"Sorry, I couldn't process your request ({type(e).__name__}: {e})"

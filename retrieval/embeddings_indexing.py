@@ -9,6 +9,10 @@ import config
 from retrieval.embeddings_router import get_embeddings_model
 
 
+MIN_CAPACITY = 1024
+EF_SEARCH = 50
+
+
 def initialize_hnsw_indexing(vectors):
     vectors_np = np.array(vectors, dtype=np.float32)
     if vectors_np.ndim != 2:
@@ -16,21 +20,38 @@ def initialize_hnsw_indexing(vectors):
 
     index = hnswlib.Index(space='cosine', dim=vectors_np.shape[1])
     index.init_index(
-        max_elements=10000,
+        max_elements=max(len(vectors_np), MIN_CAPACITY),
         ef_construction=config.HNSW_CONFIG["ef_construction"],
         M=config.HNSW_CONFIG["M"],
     )
     index.add_items(vectors_np)
-    index.set_ef(50)
+    index.set_ef(EF_SEARCH)
     return index
 
 
+def add_to_index(index, vectors):
+    """Append vectors to an existing index, growing its capacity when needed."""
+    vectors_np = np.array(vectors, dtype=np.float32)
+    needed = index.get_current_count() + len(vectors_np)
+    if needed > index.get_max_elements():
+        index.resize_index(max(needed, index.get_max_elements() * 2))
+    index.add_items(vectors_np)
+
+
 def _chunk_overlapping(text, chunk_size, overlap):
+    """Split text into overlapping chunks; the last chunk always reaches the end of the text."""
+    if not text:
+        return []
     step = chunk_size - overlap
-    return [text[i:i + chunk_size] for i in range(0, len(text) - chunk_size + 1, step)]
+    chunks = []
+    for start in range(0, len(text), step):
+        chunks.append(text[start:start + chunk_size])
+        if start + chunk_size >= len(text):
+            break
+    return chunks
 
 
-def generate_embeddings(extracted_text, vectors=None, embedding_provider="google"):
+def generate_embeddings(extracted_text, vectors=None, embedding_provider="google", source=None):
     chunk_size = config.CHUNK_SETTINGS["CHUNK_SIZE"]
     chunk_overlap = config.CHUNK_SETTINGS["CHUNK_OVERLAP"]
     if chunk_overlap >= chunk_size:
@@ -58,11 +79,14 @@ def generate_embeddings(extracted_text, vectors=None, embedding_provider="google
 
     print(f"Generated {len(vector_lst)} embeddings in {time() - start_time:.2f}s")
 
-    if not vectors:
+    if vectors is None:
         vectors = initialize_hnsw_indexing(vector_lst)
     else:
-        vectors.add_items(np.array(vector_lst))
+        add_to_index(vectors, vector_lst)
 
+    # The label is stored with the chunk (not embedded) so answers can cite the file
+    if source:
+        texts = [f"[Source: {source}]\n{t}" for t in texts]
     return vectors, texts
 
 
@@ -98,4 +122,4 @@ def fetch_relevant_data(query_vector, embeddings, original_texts):
     most_relevant_indexes = find_closest_embeddings_hnsw(query_vector, embeddings)
     candidate_vectors = [embeddings.get_items([i])[0] for i in most_relevant_indexes]
     reranked_indexes = rerank_results(query_vector, candidate_vectors, most_relevant_indexes)
-    return "".join(original_texts[i] for i in reranked_indexes)
+    return "\n\n".join(original_texts[i] for i in reranked_indexes)

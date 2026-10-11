@@ -11,37 +11,38 @@ The RAG model processes both PDF documents and audio files by first converting t
 - Dynamic Prompting: The system constructs adaptive prompts using conversational memory, embeddings, and retrieved data for improved response relevance.
 - Toolkit Integration: Includes external tools such as search and calculator functionalities, invoked dynamically by the agent.
 - PDF & Audio Processing: Converts document and audio content into embeddings for retrieval and contextualization.
+- Source Labels: Retrieved passages carry the name of the file they came from, so answers can cite the right document.
 - Memory Management: Incorporates conversational memory to ensure responses are consistent with prior interactions.
 - HNSW Indexing & Reranking: Utilizes efficient retrieval methods and reranking mechanisms for higher accuracy.
 
 ## Flow
 
-![Flowchart](https://github.com/harinaralasetty/Retrieval_Augmented_Generation/blob/main/Flowchart.png)
+![Flowchart](Flowchart.png)
 
 ## Getting Started
 
 ### Prerequisites
 
-- Python environment with necessary dependencies.
+- Python 3.13 (what the project is developed and tested on)
+- An API key for Google Gemini or Anthropic Claude (see `.env.example`)
 
 ### Installation
 
-1. Install the required packages:
+1. Create a virtual environment and install the dependencies:
    ```bash
+   python -m venv .venv
+   source .venv/bin/activate
    pip install -r requirements.txt
    ```
+   `requirements.txt` lists the direct dependencies; `requirements-lock.txt` has the exact pinned set.
 
-2. Create a `.env` file in the project root with your API keys:
+2. Copy `.env.example` to `.env` and add your keys:
+   ```bash
+   cp .env.example .env
    ```
-   GOOGLE_API_KEY=your_google_key       # from https://aistudio.google.com/
-   SERPER_API_KEY=your_serper_key       # from https://serpapi.com/dashboard (search tool)
-   ANTHROPIC_API_KEY=your_anthropic_key # optional, for Claude models — https://console.anthropic.com/
-   VOYAGE_API_KEY=your_voyage_key       # optional, for Voyage embeddings — https://dash.voyageai.com/
-   OPENAI_API_KEY=your_openai_key       # optional, for OpenAI embeddings — https://platform.openai.com/
-   ```
-   Only `GOOGLE_API_KEY` and `SERPER_API_KEY` are required. The rest are optional and only need to be set if you select that provider in the UI. For local embeddings (`sentence-transformers`), no key is needed.
+   You need at least one of `GOOGLE_API_KEY` or `ANTHROPIC_API_KEY`. Embeddings use Google, Voyage or OpenAI when their key is set, otherwise a local `sentence-transformers` model that needs no key. The web search tool is optional: set `SEARCH_PROVIDER` to `serpapi` (needs `SERPER_API_KEY`) or `tavily` (needs `TAVILY_API_KEY`).
 
-3. Adjust chunk settings in `config.py` as needed.
+3. Adjust chunk settings in `config.py` as needed (default: 1000 characters, 200 overlap).
 
 ### Running the Application
 
@@ -53,9 +54,20 @@ python server.py
 
 Then open [http://localhost:8080](http://localhost:8080) in your browser.
 
+Chats and their document indexes are saved in `data/` (set `CORAG_DATA_DIR` to change it), so they are still there after a restart. Delete that folder to start fresh.
+
+### Running the tests
+
+```bash
+pip install -r requirements-dev.txt
+pytest
+```
+
+The tests use fake embeddings and models, so they need no API keys.
+
 ## Screenshots
 
-![Screenshot](https://github.com/harinaralasetty/Retrieval_Augmented_Generation/blob/main/Screenshot.png)
+![Screenshot](Screenshot.png)
 
 ## Contributing
 

@@ -4,7 +4,6 @@ Layout: header (logo + chat title), left drawer (models + chats), right drawer
 (documents), main column (chat messages), footer (chat input).
 """
 import asyncio
-import atexit
 import io
 import os
 import tempfile
@@ -16,7 +15,6 @@ from nicegui import ui
 
 import config
 from chat_management.chat_utils import (
-    cleanup_temp_dir,
     get_chat_history,
     load_chat_threads_info,
     save_chat_threads_info,
@@ -26,8 +24,7 @@ from inference.inference_manager import process_answer, process_embeddings
 from preprocessing.audio_processor import transcribe_audio
 from preprocessing.pdf_processor import process_pdf
 from preprocessing.prompt_processor import chat_namer
-
-atexit.register(cleanup_temp_dir)
+from retrieval.index_store import load_thread_index, save_thread_index
 
 
 # ---------- App state (single-user local app) ----------
@@ -36,14 +33,24 @@ class State:
     current_thread_id: str | None = None
     vectors_per_thread: dict = {}
     text_per_thread: dict = {}
-    selected_model: str = config.models_list[0]
-    selected_embedding_provider: str = config.EMBEDDING_PROVIDERS[0]
+    selected_model: str = config.default_model()
+    selected_embedding_provider: str = config.default_embedding_provider()
 
 
 S = State()
+UPLOAD_LOCK = asyncio.Lock()  # one embedding job at a time keeps each chat's index consistent
 
 
 # ---------- Helpers ----------
+def get_thread_index(tid: str):
+    """Return (index, chunks) for a chat, loading them from disk on first use."""
+    if tid not in S.vectors_per_thread:
+        index, chunks = load_thread_index(config.DATA_DIR, tid)
+        S.vectors_per_thread[tid] = index
+        S.text_per_thread[tid] = chunks
+    return S.vectors_per_thread[tid], S.text_per_thread[tid]
+
+
 def select_thread(tid: str) -> None:
     S.current_thread_id = tid
     refresh_all()
@@ -152,7 +159,8 @@ async def handle_upload(e) -> None:
         }
         refresh_all()
 
-    thread = S.chat_threads[S.current_thread_id]
+    tid = S.current_thread_id  # the user may switch chats while a file is processing
+    thread = S.chat_threads[tid]
     if any(f['name'] == name for f in thread.get('processed_files', [])):
         ui.notify(f'{name} already processed', type='info')
         return
@@ -185,17 +193,25 @@ async def handle_upload(e) -> None:
             ui.notify('No text extracted from file.', type='warning')
             return
 
-        thread.setdefault('processed_files', []).append({'name': name, 'type': content_type})
-        thread['document_theme'] = theme
-        thread['embedding_provider'] = S.selected_embedding_provider
+        # A chat keeps the embedding provider it started with: vectors from different providers can't be mixed
+        provider = thread.get('embedding_provider') or S.selected_embedding_provider
+        if provider != S.selected_embedding_provider:
+            ui.notify(f'This chat already uses {provider} embeddings, so {name} will too.', type='info')
 
         notif.message = f'Embedding {name}…'
-        vectors, original_data = await asyncio.to_thread(
-            process_embeddings, extracted_text, embedding_provider=S.selected_embedding_provider,
-        )
-        S.vectors_per_thread[S.current_thread_id] = vectors
-        S.text_per_thread[S.current_thread_id] = original_data
+        async with UPLOAD_LOCK:
+            index, chunks = get_thread_index(tid)
+            index, new_chunks = await asyncio.to_thread(
+                process_embeddings, extracted_text, provider, index, name,
+            )
+            chunks = chunks + new_chunks
+            S.vectors_per_thread[tid] = index
+            S.text_per_thread[tid] = chunks
+            save_thread_index(config.DATA_DIR, tid, index, chunks)
 
+        thread.setdefault('processed_files', []).append({'name': name, 'type': content_type})
+        thread['document_theme'] = theme
+        thread['embedding_provider'] = provider
         save_chat_threads_info(S.chat_threads)
         notif.dismiss()
         ui.notify(f'Processed {name}', type='positive')
@@ -227,8 +243,7 @@ async def submit_question() -> None:
         }
 
     thread = S.chat_threads[S.current_thread_id]
-    vectors = S.vectors_per_thread.get(S.current_thread_id, [])
-    original_data = S.text_per_thread.get(S.current_thread_id, [])
+    vectors, original_data = get_thread_index(S.current_thread_id)
 
     # Show user message immediately with a placeholder answer
     thread.setdefault('messages', []).append({'user': question, 'answer': '_thinking…_'})
@@ -237,12 +252,11 @@ async def submit_question() -> None:
     try:
         answer = await asyncio.to_thread(
             process_answer,
-            config.BASE_PROMPT,
             thread_name=S.current_thread_id,
             question=question,
             original_data=original_data,
             vectors=vectors,
-            chat_history=get_chat_history(thread),
+            chat_history=get_chat_history(thread, skip_last=True),
             document_theme=thread.get('document_theme', ''),
             inference_model=S.selected_model,
             embedding_provider=thread.get('embedding_provider', S.selected_embedding_provider),
@@ -471,7 +485,7 @@ def build() -> None:
         ui.label('Documents').classes('text-base font-semibold q-mb-md')
         ui.upload(
             on_upload=handle_upload,
-            multiple=False,
+            multiple=True,
             auto_upload=True,
             max_file_size=200_000_000,
             label='Drop PDF / MP3 / WAV',
@@ -483,6 +497,10 @@ def build() -> None:
     # Main content
     with ui.column().classes('w-full max-w-3xl mx-auto q-px-md q-py-lg'):
         chat_messages()
+
+    if not config.has_any_llm_key():
+        ui.notify('No API key found. Add GOOGLE_API_KEY or ANTHROPIC_API_KEY to your .env file (see .env.example).',
+                  type='warning', timeout=0, close_button=True)
 
     # Footer: chat input (pill style, send icon inside)
     with ui.footer().props('bordered=false'):
