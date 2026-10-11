@@ -252,12 +252,11 @@ async def submit_question() -> None:
     try:
         answer = await asyncio.to_thread(
             process_answer,
-            config.BASE_PROMPT,
             thread_name=S.current_thread_id,
             question=question,
             original_data=original_data,
             vectors=vectors,
-            chat_history=get_chat_history(thread),
+            chat_history=get_chat_history(thread, skip_last=True),
             document_theme=thread.get('document_theme', ''),
             inference_model=S.selected_model,
             embedding_provider=thread.get('embedding_provider', S.selected_embedding_provider),

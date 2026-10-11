@@ -107,7 +107,6 @@ def initialize_agent(thread_name, original_data=None, vectors=None, inference_mo
 
 
 def process_answer(
-    BASE_PROMPT,
     thread_name,
     question,
     original_data=None,

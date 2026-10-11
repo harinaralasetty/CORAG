@@ -32,6 +32,8 @@ def format_exchange(message):
     return f"User: {message['user']} \nAssistant: {message['answer']}\n"
 
 
-def get_chat_history(chat_history):
-    return [format_exchange(m) for m in chat_history['messages']]
+def get_chat_history(chat_history, skip_last=False):
+    """Format a thread's exchanges; skip_last leaves out the exchange currently being answered."""
+    messages = chat_history['messages'][:-1] if skip_last else chat_history['messages']
+    return [format_exchange(m) for m in messages]
 
