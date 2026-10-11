@@ -25,7 +25,7 @@ class CustomAgentExecutor:
         self.llm = llm
         self.llm_with_tools = llm_with_tools
         self.memory = memory
-        self.vectors = vectors or []
+        self.vectors = vectors
         self.original_data = original_data or []
         # Provider used to build the index — query embeddings must match
         self.embedding_provider = "google"
@@ -39,18 +39,21 @@ class CustomAgentExecutor:
 
         relevant_context = (
             fetch_relevant_data(query_vector, self.vectors, self.original_data)
-            if self.vectors else ""
+            if self.vectors is not None and self.original_data else ""
         )
 
-        prompt = BASE_PROMPT.format(
-            context=relevant_context,
-            question=rephrased_input,
-            relevant_chat_history=chat_history or "",
-            last_n=5,
-            last_n_messages=self.memory.chat_memory.messages[-5:],
-            tool_call="",
-            document_names=", ".join(document_names) if document_names else "none",
-        )
+        def build_prompt(tool_output=""):
+            return BASE_PROMPT.format(
+                context=relevant_context,
+                question=rephrased_input,
+                relevant_chat_history=chat_history or "",
+                last_n=5,
+                last_n_messages=self.memory.chat_memory.messages[-5:],
+                tool_call=tool_output,
+                document_names=", ".join(document_names) if document_names else "none",
+            )
+
+        prompt = build_prompt()
 
         # Claude path: skip langchain tool chain (no langchain-anthropic to avoid
         # version conflicts with langchain-google-genai). Plain message → response.
@@ -60,7 +63,7 @@ class CustomAgentExecutor:
             return response
 
         try:
-            chain = self.llm_with_tools | (lambda msg: self.tool_manager_func(msg, self.llm))
+            chain = self.llm_with_tools | (lambda msg: self.tool_manager_func(msg, self.llm, build_prompt))
             response = chain.invoke(prompt)
             self.memory.chat_memory.add_ai_message(response)
             return response
@@ -94,11 +97,10 @@ def initialize_agent(thread_name, original_data=None, vectors=None, inference_mo
             original_data=original_data,
         )
     else:
+        # The caller owns the full chunk list and index for the thread, so replace (never extend)
         agent = agents[key_name]
-        if original_data:
-            agent.original_data.extend(original_data)
-        if vectors:
-            agent.vectors = vectors
+        agent.original_data = original_data or []
+        agent.vectors = vectors
 
     agents[key_name].embedding_provider = embedding_provider
     return agents[key_name]
@@ -136,8 +138,11 @@ def process_answer(
     return response.content if hasattr(response, 'content') else response
 
 
-def process_embeddings(text_list, embedding_provider="google"):
-    """Generate embeddings from raw text segments."""
-    if not text_list:
-        return []
-    return generate_embeddings(text_list, embedding_provider=embedding_provider)
+def process_embeddings(text, embedding_provider="google", vectors=None, source=None):
+    """Chunk and embed text, adding it to an existing index when one is given.
+
+    Returns (index, chunks) where chunks are only the newly created ones.
+    """
+    if not text:
+        return vectors, []
+    return generate_embeddings(text, vectors=vectors, embedding_provider=embedding_provider, source=source)
