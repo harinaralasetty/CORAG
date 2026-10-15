@@ -17,6 +17,7 @@ sentence-transformers==5.5.1
 # Document and audio input
 PyPDF2==3.0.1
 SpeechRecognition==3.12.0
+soundfile==0.14.0
 
 # Search tools. google_search_results provides the `serpapi` module imported by
 # toolkit/search.py; do not also install the separate `serpapi` package (it conflicts).
