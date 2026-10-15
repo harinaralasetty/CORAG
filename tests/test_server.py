@@ -227,3 +227,23 @@ async def test_a_chat_whose_index_cannot_be_loaded_asks_for_a_reupload(request, 
 
     assert read_threads()[tid]["processed_files"] == []
     assert tid in caplog.text
+
+
+async def test_the_same_file_uploaded_twice_at_once_is_processed_once(user: User, monkeypatch):
+    install_fakes(monkeypatch)
+    await user.open("/")
+    element = user.find(ui.upload).elements.pop()
+    data = make_pdf("Twins share one birthday and one cake.")
+    await element.handle_uploads([
+        SmallFileUpload(name="twins.pdf", content_type="application/pdf", _data=data),
+        SmallFileUpload(name="twins.pdf", content_type="application/pdf", _data=data),
+    ])
+
+    def outcomes():
+        return [m for m in user.notify.messages if m in ("Processed twins.pdf", "twins.pdf already processed")]
+
+    await wait_for(lambda: len(outcomes()) == 2)
+    assert sorted(outcomes()) == ["Processed twins.pdf", "twins.pdf already processed"]
+    files = [t["processed_files"] for t in read_threads().values()
+             if any(f["name"] == "twins.pdf" for f in t["processed_files"])]
+    assert files == [[{"name": "twins.pdf", "type": "application/pdf"}]]

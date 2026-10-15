@@ -34,6 +34,7 @@ class State:
     current_thread_id: str | None = None
     vectors_per_thread: dict = {}
     text_per_thread: dict = {}
+    uploads_in_progress: set = set()  # (chat id, file name) pairs still being processed
     selected_model: str = config.default_model()
     selected_embedding_provider: str = config.default_embedding_provider()
 
@@ -175,9 +176,10 @@ async def handle_upload(e) -> None:
 
     tid = S.current_thread_id  # the user may switch chats while a file is processing
     thread = S.chat_threads[tid]
-    if any(f['name'] == name for f in thread.get('processed_files', [])):
+    if (tid, name) in S.uploads_in_progress or any(f['name'] == name for f in thread.get('processed_files', [])):
         ui.notify(f'{name} already processed', type='info')
         return
+    S.uploads_in_progress.add((tid, name))
 
     notif = ui.notification(f'Processing {name}…', spinner=True, timeout=None)
 
@@ -234,6 +236,8 @@ async def handle_upload(e) -> None:
         notif.dismiss()
         traceback.print_exc()
         ui.notify(f'Upload error: {ex}', type='negative')
+    finally:
+        S.uploads_in_progress.discard((tid, name))
 
 
 # ---------- Chat submission ----------
