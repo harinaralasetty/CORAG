@@ -1,5 +1,6 @@
 """Save and load a chat's vector index and chunk texts so documents survive restarts."""
 import json
+import logging
 import os
 
 import hnswlib
@@ -10,6 +11,8 @@ INDEX_FILE = "index.bin"
 CHUNKS_FILE = "chunks.json"
 MIN_CAPACITY = 1024
 EF_SEARCH = 50
+
+log = logging.getLogger(__name__)
 
 
 def save_thread_index(base_dir, thread_id, index, texts):
@@ -46,7 +49,9 @@ def load_thread_index(base_dir, thread_id):
         index.load_index(index_path, max_elements=max(len(texts) * 2, MIN_CAPACITY))
         index.set_ef(EF_SEARCH)
     except Exception:
+        log.warning("Could not load the index of chat %s", thread_id, exc_info=True)
         return None, []
     if index.get_current_count() != len(texts):
+        log.warning("Index of chat %s holds %d vectors but %d chunks", thread_id, index.get_current_count(), len(texts))
         return None, []
     return index, texts
