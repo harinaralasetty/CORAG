@@ -20,7 +20,7 @@ cp .env.example .env              # then add a Gemini or Claude API key
 python server.py                  # open http://localhost:8080
 ```
 
-<img src="docs/assets/flow.svg" alt="CORAG pipeline: a PDF or WAV file is extracted, split into 1,000-character chunks, embedded and stored in an HNSW index; a question is rephrased, the 20 nearest chunks are retrieved, and Gemini or Claude answers naming the source file" width="880">
+<img src="docs/assets/flow.svg" alt="CORAG pipeline: a PDF, MP3 or WAV file is extracted, split into 1,000-character chunks, embedded and stored in an HNSW index; a question is rephrased, the 20 nearest chunks are retrieved, and Gemini or Claude answers naming the source file" width="880">
 
 </div>
 
@@ -31,7 +31,7 @@ python server.py                  # open http://localhost:8080
 
 You have a stack of PDFs or recordings and want to ask them questions instead of scrolling through them.
 
-- **Ask across several files.** Add as many PDFs or WAV recordings to a chat as you like and ask about them together. Every passage is labelled with its file name, so answers can say where they came from.
+- **Ask across several files.** Add as many PDFs or MP3 and WAV recordings to a chat as you like and ask about them together. Every passage is labelled with its file name, so answers can say where they came from.
 - **Pick your model.** Switch between Gemini and Claude models from a dropdown, per question.
 - **Embeddings without a key.** Use Google, Voyage or OpenAI embeddings, or a local sentence-transformers model that needs no API key.
 - **Chats survive restarts.** Chats, their file lists and their search indexes are saved in a local `data/` folder.
@@ -64,7 +64,7 @@ cp .env.example .env
 python server.py
 ```
 
-**4. Use it.** Drop a PDF or WAV file into the **Documents** panel on the right, wait for "Processed", then type a question. Pick the model and embedding provider in the left panel; start a new chat with **+**.
+**4. Use it.** Drop a PDF, MP3 or WAV file into the **Documents** panel on the right, wait for "Processed", then type a question. Pick the model and embedding provider in the left panel; start a new chat with **+**.
 
 <details>
 <summary><b>Settings, models, storage and tests</b></summary>
@@ -110,7 +110,7 @@ The tests use fake embeddings and models, so they need no API keys.
 
 | Area | Details |
 | --- | --- |
-| **Documents** | PDF text extraction with ligature and line-break cleanup; WAV speech-to-text; several files per chat |
+| **Documents** | PDF text extraction with ligature and line-break cleanup; MP3 and WAV speech-to-text; several files per chat |
 | **Retrieval** | Question rephrased by the model, HNSW cosine search over 1,000-character chunks, top 20 re-sorted by similarity |
 | **Answers** | Nine Gemini and Claude models; prompts carry passages, file names and chat history, and ask the model to name its sources |
 | **Embeddings** | Google, Voyage, OpenAI or a local sentence-transformers model |
@@ -141,7 +141,7 @@ This screenshot is from an earlier Streamlit version of CORAG. The current NiceG
 
 **Does my data leave my computer?** Yes, for answers: your question and the retrieved passages go to Gemini or Claude, and audio goes to Google's Web Speech service. Extracted text, chats and indexes are stored only in the local `data/` folder. With the local embedding model, document text is not sent anywhere for embedding.
 
-**Which files can I upload?** PDFs with a text layer and WAV audio. Scanned PDFs need OCR first. The upload box also accepts MP3, but the transcriber reads only WAV, AIFF and FLAC, so convert MP3 to WAV before uploading.
+**Which files can I upload?** PDFs with a text layer, and MP3 or WAV audio. Scanned PDFs need OCR first.
 
 **Can I change the embedding provider in an existing chat?** No. Vectors from different providers cannot be mixed, so a chat keeps its first provider. Start a new chat to use another.
 

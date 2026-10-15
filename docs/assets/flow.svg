@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="880" height="320" viewBox="0 0 880 320" role="img" aria-labelledby="t d">
   <title id="t">How CORAG answers a question about your documents</title>
-  <desc id="d">Adding a file: extract text from a PDF or transcribe a WAV, split it into 1,000-character chunks, embed them with Google, Voyage, OpenAI or a local model, and store them in an HNSW index saved in data. Asking: the LLM rephrases the question, the 20 nearest chunks are retrieved from that chat's index and re-sorted, a prompt is built with the passages, chat history and optional tool results, and Gemini or Claude answers naming the source file.</desc>
+  <desc id="d">Adding a file: extract text from a PDF or transcribe audio, split it into 1,000-character chunks, embed them with Google, Voyage, OpenAI or a local model, and store them in an HNSW index saved in data. Asking: the LLM rephrases the question, the 20 nearest chunks are retrieved from that chat's index and re-sorted, a prompt is built with the passages, chat history and optional tool results, and Gemini or Claude answers naming the source file.</desc>
   <style>
     .b{fill:#161b22;stroke:#30363d}.h{font:600 14px ui-sans-serif,system-ui,-apple-system,'Segoe UI',sans-serif;fill:#e6edf3}
     .s{font:12px ui-sans-serif,system-ui,-apple-system,'Segoe UI',sans-serif;fill:#8b949e}
