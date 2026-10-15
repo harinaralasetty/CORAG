@@ -42,6 +42,10 @@ CORAG is a single-user local web app. `server.py` builds the NiceGUI interface a
 6. Claude models get the plain prompt with no tools.
 7. After the first answer in a new chat, the model names the chat (`prompts/chat_naming.txt`).
 
+Uploads and questions run on worker threads, so a question can search a chat's index while an upload grows it. Each index has a lock, held for one add (including any resize) or for one question's search; a question only uses the chunks that existed when it was asked, and exchanges still waiting for an answer are left out of the chat history.
+
+A failed model call raises an error whose message has API keys removed. If rephrasing fails, the question is searched as asked and a warning is logged; if naming fails, the chat keeps its temporary name and naming is tried again after the next answer; if answering fails, the chat shows and saves `**Error:**` with the cause.
+
 ## Saved data
 
 Saves write a temp file in the same folder, fsync it and rename it over the old file, so a crash leaves the old or the new version. A chat's chunk texts are renamed after its index, and loading checks that the index holds one vector per chunk. If a chat still lists files but its index is missing, unreadable or mismatched, opening the chat logs a warning, clears its file list, document theme and embedding provider on disk, and shows a warning (until closed) naming the files to upload again. The chat and its messages stay usable, and the next upload builds a fresh index that replaces the broken files.
