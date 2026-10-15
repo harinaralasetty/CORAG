@@ -33,7 +33,7 @@ def format_exchange(message):
 
 
 def get_chat_history(chat_history, skip_last=False):
-    """Format a thread's exchanges; skip_last leaves out the exchange currently being answered."""
+    """Format a thread's answered exchanges; skip_last leaves out the exchange currently being answered."""
     messages = chat_history['messages'][:-1] if skip_last else chat_history['messages']
-    return [format_exchange(m) for m in messages]
+    return [format_exchange(m) for m in messages if not m.get('pending')]
 

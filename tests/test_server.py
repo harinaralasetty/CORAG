@@ -247,3 +247,30 @@ async def test_the_same_file_uploaded_twice_at_once_is_processed_once(user: User
     files = [t["processed_files"] for t in read_threads().values()
              if any(f["name"] == "twins.pdf" for f in t["processed_files"])]
     assert files == [[{"name": "twins.pdf", "type": "application/pdf"}]]
+
+
+async def test_a_question_asked_while_another_is_answered_does_not_see_its_placeholder(user: User, monkeypatch):
+    install_fakes(monkeypatch)
+    histories = {}
+
+    class SlowAgent:
+        def run(self, user_input, chat_history=None, **kwargs):
+            histories[user_input] = list(chat_history or [])
+            time.sleep(1.0 if user_input == "slow question" else 0.1)
+            return f"REPLY|{user_input}"
+
+    monkeypatch.setattr(im, "initialize_agent", lambda *args, **kwargs: SlowAgent())
+    await user.open("/")
+    user.find(ui.input).type("slow question").trigger("keydown.enter")
+    await asyncio.sleep(0.2)
+    user.find(ui.input).type("quick question").trigger("keydown.enter")
+    await wait_for(lambda: "quick question" in histories)
+    assert histories["quick question"] == []  # the slow question has no answer yet
+
+    await wait_for(lambda: any(m.get("answer") == "REPLY|slow question"
+                               for t in read_threads().values() for m in t["messages"]))
+    user.find(ui.input).type("later question").trigger("keydown.enter")
+    await wait_for(lambda: "later question" in histories)
+    assert [h.split("\n")[0] for h in histories["later question"]] == [
+        "User: slow question ", "User: quick question "]
+    assert not any("_thinking" in h for h in histories["later question"])

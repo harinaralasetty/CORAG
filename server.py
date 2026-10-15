@@ -264,8 +264,8 @@ async def submit_question() -> None:
     vectors, original_data = get_thread_index(S.current_thread_id)
 
     # Show user message immediately with a placeholder answer. Keep a handle on this exchange:
-    # another question may be appended while this one is being answered.
-    exchange = {'user': question, 'answer': '_thinking…_'}
+    # another question may be appended while this one is being answered. Pending exchanges stay out of chat history.
+    exchange = {'user': question, 'answer': '_thinking…_', 'pending': True}
     thread.setdefault('messages', []).append(exchange)
     refresh_all()
 
@@ -283,6 +283,7 @@ async def submit_question() -> None:
             document_names=[f['name'] for f in thread.get('processed_files', [])],
         )
         exchange['answer'] = answer
+        exchange.pop('pending', None)
 
         if thread.get('name') == 'Temporary Thread':
             try:
@@ -295,6 +296,7 @@ async def submit_question() -> None:
         save_chat_threads_info(S.chat_threads)
     except Exception as ex:
         exchange['answer'] = f'**Error:** {ex}'
+        exchange.pop('pending', None)
         traceback.print_exc()
         try:
             save_chat_threads_info(S.chat_threads)  # otherwise a restart shows "_thinking…_" for this question
