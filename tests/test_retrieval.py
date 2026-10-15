@@ -91,3 +91,12 @@ def test_chunks_added_while_a_question_is_answered_are_ignored(small_chunks):
     ei.generate_embeddings("zzzz qqqq " * 20, vectors=index, source="b.txt")
     context = ei.fetch_relevant_data(ei.generate_query_embedding("zzzz qqqq"), index, chunks)
     assert context and "[Source: b.txt]" not in context
+
+
+def test_new_chunks_do_not_crowd_out_the_questions_own_chunks(small_chunks):
+    # More than 20 newer chunks sit closer to the query than the question's own few chunks
+    index, chunks = ei.generate_embeddings("cccc dddd " * 12, source="a.txt")
+    ei.generate_embeddings("aaaa bbbb " * 100, vectors=index, source="b.txt")
+    assert index.get_current_count() > len(chunks) + 20
+    context = ei.fetch_relevant_data(ei.generate_query_embedding("aaaa bbbb"), index, chunks)
+    assert "[Source: a.txt]" in context and "[Source: b.txt]" not in context

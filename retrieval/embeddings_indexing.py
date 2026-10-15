@@ -101,9 +101,16 @@ def generate_query_embedding(query_text, embedding_provider="google"):
     return query_vector
 
 
-def find_closest_embeddings_hnsw(query_vector, embeddings):
-    k = min(20, len(embeddings.get_ids_list()))
-    labels, _ = embeddings.knn_query(query_vector, k=k)
+def find_closest_embeddings_hnsw(query_vector, embeddings, max_label=None):
+    """Labels of the 20 nearest chunks; with max_label, only chunks whose label is below it are considered."""
+    count = len(embeddings.get_ids_list())
+    if max_label is None:
+        labels, _ = embeddings.knn_query(query_vector, k=min(20, count))
+        return labels[0]
+    k = min(20, count, max_label)
+    if k == 0:
+        return []
+    labels, _ = embeddings.knn_query(query_vector, k=k, filter=lambda label: label < max_label)
     return labels[0]
 
 
@@ -119,10 +126,9 @@ def fetch_relevant_data(query_vector, embeddings, original_texts):
     if not original_texts:
         return ""
 
-    most_relevant_indexes = find_closest_embeddings_hnsw(query_vector, embeddings)
-    # An upload may grow the shared index while a question is answered; skip chunks newer than original_texts
-    most_relevant_indexes = [i for i in most_relevant_indexes if i < len(original_texts)]
-    if not most_relevant_indexes:
+    # An upload may grow the shared index while a question is answered: search only the chunks in original_texts
+    most_relevant_indexes = find_closest_embeddings_hnsw(query_vector, embeddings, max_label=len(original_texts))
+    if len(most_relevant_indexes) == 0:
         return ""
     candidate_vectors = [embeddings.get_items([i])[0] for i in most_relevant_indexes]
     reranked_indexes = rerank_results(query_vector, candidate_vectors, most_relevant_indexes)
