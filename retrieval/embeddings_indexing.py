@@ -1,3 +1,5 @@
+import threading
+import weakref
 from math import ceil
 from time import time
 
@@ -11,6 +13,17 @@ from retrieval.embeddings_router import get_embeddings_model
 
 MIN_CAPACITY = 1024
 EF_SEARCH = 50
+
+# hnswlib cannot resize or add to an index while it is being searched. An upload grows a chat's
+# index on one worker thread while a question may search it on another, so each index gets a lock,
+# held for one add (with its resize) or for one question's search and get_items.
+_index_locks = weakref.WeakKeyDictionary()
+_index_locks_guard = threading.Lock()
+
+
+def index_lock(index):
+    with _index_locks_guard:
+        return _index_locks.setdefault(index, threading.Lock())
 
 
 def initialize_hnsw_indexing(vectors):
@@ -32,10 +45,11 @@ def initialize_hnsw_indexing(vectors):
 def add_to_index(index, vectors):
     """Append vectors to an existing index, growing its capacity when needed."""
     vectors_np = np.array(vectors, dtype=np.float32)
-    needed = index.get_current_count() + len(vectors_np)
-    if needed > index.get_max_elements():
-        index.resize_index(max(needed, index.get_max_elements() * 2))
-    index.add_items(vectors_np)
+    with index_lock(index):
+        needed = index.get_current_count() + len(vectors_np)
+        if needed > index.get_max_elements():
+            index.resize_index(max(needed, index.get_max_elements() * 2))
+        index.add_items(vectors_np)
 
 
 def _chunk_overlapping(text, chunk_size, overlap):
@@ -127,9 +141,10 @@ def fetch_relevant_data(query_vector, embeddings, original_texts):
         return ""
 
     # An upload may grow the shared index while a question is answered: search only the chunks in original_texts
-    most_relevant_indexes = find_closest_embeddings_hnsw(query_vector, embeddings, max_label=len(original_texts))
+    with index_lock(embeddings):
+        most_relevant_indexes = find_closest_embeddings_hnsw(query_vector, embeddings, max_label=len(original_texts))
+        candidate_vectors = [embeddings.get_items([i])[0] for i in most_relevant_indexes]
     if len(most_relevant_indexes) == 0:
         return ""
-    candidate_vectors = [embeddings.get_items([i])[0] for i in most_relevant_indexes]
     reranked_indexes = rerank_results(query_vector, candidate_vectors, most_relevant_indexes)
     return "\n\n".join(original_texts[i] for i in reranked_indexes)

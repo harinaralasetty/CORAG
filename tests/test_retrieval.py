@@ -1,4 +1,5 @@
 import json
+import threading
 
 import numpy as np
 import pytest
@@ -118,3 +119,37 @@ def test_a_crash_while_saving_keeps_the_previous_index(tmp_path, small_chunks, m
     loaded, loaded_chunks = load_thread_index(str(tmp_path), "t3")
     assert loaded_chunks == chunks and loaded.get_current_count() == len(chunks)
     assert sorted(p.name for p in (tmp_path / "t3").iterdir()) == ["chunks.json", "index.bin"]
+
+
+def test_an_upload_cannot_resize_the_index_in_the_middle_of_a_question(monkeypatch):
+    # hnswlib must not resize an index while it is being searched: a question's search and get_items
+    # must see the index unchanged, even when an upload that outgrows its capacity arrives in between
+    monkeypatch.setitem(config.CHUNK_SETTINGS, "CHUNK_SIZE", 10)
+    monkeypatch.setitem(config.CHUNK_SETTINGS, "CHUNK_OVERLAP", 0)
+    index, chunks = ei.generate_embeddings("abcdefghij" * ei.MIN_CAPACITY)  # exactly at capacity
+    assert index.get_current_count() == index.get_max_elements()
+    searched, upload_done = threading.Event(), threading.Event()
+    seen = {}
+    search = ei.find_closest_embeddings_hnsw
+
+    def search_then_let_the_upload_in(*args, **kwargs):
+        labels = search(*args, **kwargs)
+        seen["before"] = index.get_max_elements()
+        searched.set()
+        upload_done.wait(timeout=1)  # without a lock the upload resizes the index here
+        seen["after"] = index.get_max_elements()
+        return labels
+
+    def upload():
+        searched.wait(timeout=5)
+        ei.add_to_index(index, [vec("klmnopqrst")] * 10)
+        upload_done.set()
+
+    monkeypatch.setattr(ei, "find_closest_embeddings_hnsw", search_then_let_the_upload_in)
+    uploader = threading.Thread(target=upload)
+    uploader.start()
+    context = ei.fetch_relevant_data(ei.generate_query_embedding("abcdefghij"), index, chunks)
+    uploader.join(timeout=5)
+    assert context and seen["before"] == seen["after"] == ei.MIN_CAPACITY
+    assert index.get_current_count() == len(chunks) + 10 > index.get_max_elements() // 2
+
