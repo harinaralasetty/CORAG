@@ -1,9 +1,11 @@
+import logging
 import traceback
 
 from langchain.memory import ConversationBufferMemory
 
 from config import BASE_PROMPT
 from inference.gemini_interaction import generate_gemini_response, get_model_instance
+from inference.llm_error import LLMError
 from inference.model_router import generate_response, is_claude
 from preprocessing.prompt_processor import rephrase_prompt
 from retrieval.embeddings_indexing import (
@@ -15,6 +17,7 @@ from toolkit.tool_manager import call_tools, tools
 
 # One agent per (thread, model) pair
 agents = {}
+log = logging.getLogger(__name__)
 
 
 class CustomAgentExecutor:
@@ -33,7 +36,11 @@ class CustomAgentExecutor:
     def run(self, user_input, document_theme=None, chat_history=None, inference_model=None, document_names=None):
         self.memory.chat_memory.add_user_message(user_input)
 
-        rephrased_input = rephrase_prompt(user_input, document_theme, inference_model)
+        try:
+            rephrased_input = rephrase_prompt(user_input, document_theme, inference_model)
+        except LLMError as e:
+            log.warning("Could not rephrase the question, searching with it as asked: %s", e)
+            rephrased_input = user_input
 
         query_vector = generate_query_embedding(rephrased_input, self.embedding_provider)
 

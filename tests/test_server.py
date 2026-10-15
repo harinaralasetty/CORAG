@@ -14,7 +14,9 @@ from nicegui.testing.general_fixtures import get_path_to_main_file
 from nicegui.testing.user_simulation import user_simulation
 
 import config
+from inference import gemini_interaction as gi
 from inference import inference_manager as im
+from inference import model_router
 from preprocessing import prompt_processor as pp
 from retrieval import embeddings_indexing as ei
 
@@ -274,3 +276,45 @@ async def test_a_question_asked_while_another_is_answered_does_not_see_its_place
     assert [h.split("\n")[0] for h in histories["later question"]] == [
         "User: slow question ", "User: quick question "]
     assert not any("_thinking" in h for h in histories["later question"])
+
+
+class BrokenModel:
+    def invoke(self, prompt):
+        raise RuntimeError(f"quota exceeded for key {os.environ['GOOGLE_API_KEY']}")
+
+
+class BrokenToolsLLM:
+    def bind_tools(self, tools):
+        return RunnableLambda(lambda prompt: BrokenModel().invoke(prompt))
+
+
+def finished_answer(question):
+    for thread in read_threads().values():
+        for message in thread["messages"]:
+            if message["user"] == question and not message["answer"].startswith("_thinking"):
+                return thread, message["answer"]
+    return None, ""
+
+
+async def test_a_failed_chat_naming_keeps_a_neutral_name(user: User, monkeypatch):
+    install_fakes(monkeypatch)
+    monkeypatch.setattr(pp, "generate_response", model_router.generate_response)
+    monkeypatch.setattr(gi, "get_model_instance", lambda model: BrokenModel())  # only naming reaches it
+    await user.open("/")
+    user.find(ui.input).type("name this chat").trigger("keydown.enter")
+    await wait_for(lambda: finished_answer("name this chat")[0])
+    thread, answer = finished_answer("name this chat")
+    assert answer.startswith("REPLY|")
+    assert thread["name"] == "Temporary Thread"
+
+
+async def test_a_failed_model_call_shows_an_error_not_a_reply(user: User, monkeypatch):
+    install_fakes(monkeypatch)
+    monkeypatch.setattr(im, "get_model_instance", lambda model: BrokenToolsLLM())
+    monkeypatch.setattr(gi, "get_model_instance", lambda model: BrokenModel())  # the plain-prompt fallback
+    await user.open("/")
+    user.find(ui.input).type("unlucky question").trigger("keydown.enter")
+    await wait_for(lambda: finished_answer("unlucky question")[0])
+    answer = finished_answer("unlucky question")[1]
+    assert answer.startswith("**Error:**") and "quota exceeded" in answer
+    assert os.environ["GOOGLE_API_KEY"] not in answer

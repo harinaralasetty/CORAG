@@ -4,7 +4,9 @@ from langchain_core.messages import AIMessage
 from langchain_core.runnables import RunnableLambda
 
 import config
+from inference import gemini_interaction as gi
 from inference import inference_manager as im
+from preprocessing import prompt_processor as pp
 from retrieval import embeddings_indexing as ei
 
 
@@ -79,3 +81,24 @@ def test_reusing_an_agent_replaces_instead_of_extending_chunks():
     assert agent.original_data == chunks and len(agent.original_data) == len(chunks)
     agent = im.initialize_agent("t", original_data=None, vectors=None, inference_model="claude-haiku-4-5-20251001")
     assert agent.original_data == [] and agent.vectors is None
+
+
+class BrokenModel:
+    def invoke(self, prompt):
+        raise RuntimeError("quota exceeded")
+
+
+def test_a_failed_rephrase_searches_with_the_question_as_asked(monkeypatch, caplog):
+    monkeypatch.setattr(im, "rephrase_prompt", pp.rephrase_prompt)
+    monkeypatch.setattr(gi, "get_model_instance", lambda model: BrokenModel())
+    queries = []
+
+    def record_query(text, provider):
+        queries.append(text)
+        return ei.generate_query_embedding(text, provider)
+
+    monkeypatch.setattr(im, "generate_query_embedding", record_query)
+    agent = make_agent([], RecordingLLM())
+    agent.run("What is the launch code?", inference_model="gemini-2.5-flash")
+    assert queries == ["What is the launch code?"]
+    assert "quota exceeded" in caplog.text
