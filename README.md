@@ -10,6 +10,7 @@
 
 [![Apache-2.0 license](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 [![Python 3.13](https://img.shields.io/badge/Python-3.13-3776AB.svg)](requirements.txt)
+[![CI](https://github.com/harinaralasetty/CORAG/actions/workflows/ci.yml/badge.svg)](https://github.com/harinaralasetty/CORAG/actions/workflows/ci.yml)
 
 [**Quick start**](#quick-start) · [Why CORAG](#why-corag) · [What it does](#what-it-does) · [How it works](#how-it-works) · [Screenshots](#screenshots) · [FAQ](#faq) · [Docs](#documentation)
 
