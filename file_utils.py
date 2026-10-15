@@ -8,6 +8,11 @@ def make_temp_path(path):
     """Create an empty temp file in the target's folder, so os.replace stays a same-disk rename."""
     fd, tmp = tempfile.mkstemp(dir=os.path.dirname(path) or ".", prefix=os.path.basename(path) + ".", suffix=".tmp")
     os.close(fd)
+    # mkstemp makes owner-only files; keep the target's permissions (or ordinary 0644 for a new file)
+    try:
+        os.chmod(tmp, os.stat(path).st_mode & 0o777 if os.path.exists(path) else 0o644)
+    except OSError:
+        pass
     return tmp
 
 
