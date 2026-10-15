@@ -278,6 +278,10 @@ async def submit_question() -> None:
     except Exception as ex:
         exchange['answer'] = f'**Error:** {ex}'
         traceback.print_exc()
+        try:
+            save_chat_threads_info(S.chat_threads)  # otherwise a restart shows "_thinking…_" for this question
+        except Exception:
+            traceback.print_exc()
 
     refresh_all()
 

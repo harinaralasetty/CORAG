@@ -171,3 +171,25 @@ async def test_two_questions_in_flight_each_keep_their_own_answer(user: User, mo
         ("first question", "REPLY|first question"),
         ("second question", "REPLY|second question"),
     ]
+
+
+async def test_a_failed_answer_is_saved_to_disk(user: User, monkeypatch):
+    install_fakes(monkeypatch)
+
+    class FailingAgent:
+        def run(self, user_input, **kwargs):
+            raise RuntimeError("model unavailable")
+
+    monkeypatch.setattr(im, "initialize_agent", lambda *args, **kwargs: FailingAgent())
+    await user.open("/")
+    user.find(ui.input).type("doomed question").trigger("keydown.enter")
+
+    def saved_answer():
+        for thread in read_threads().values():
+            for message in thread["messages"]:
+                if message["user"] == "doomed question":
+                    return message["answer"]
+        return ""
+
+    await wait_for(lambda: saved_answer().startswith("**Error:**"))  # a restart would otherwise show "_thinking…_"
+    assert "model unavailable" in saved_answer()
