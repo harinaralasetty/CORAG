@@ -124,8 +124,14 @@ def find_closest_embeddings_hnsw(query_vector, embeddings, max_label=None):
     k = min(20, count, max_label)
     if k == 0:
         return []
-    labels, _ = embeddings.knn_query(query_vector, k=k, filter=lambda label: label < max_label)
-    return labels[0]
+    try:
+        labels, _ = embeddings.knn_query(query_vector, k=k, filter=lambda label: label < max_label)
+        return labels[0]
+    except RuntimeError:
+        # The filtered graph walk found fewer than k allowed chunks (a small chat inside a large index): search exactly
+        own_vectors = embeddings.get_items(list(range(max_label)))
+        scores = cosine_similarity(query_vector, own_vectors)[0]
+        return [int(i) for i in np.argsort(scores)[::-1][:k]]
 
 
 def rerank_results(query_vector, candidate_vectors, candidate_indexes):

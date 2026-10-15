@@ -1,6 +1,7 @@
 import json
 import threading
 
+import hnswlib
 import numpy as np
 import pytest
 
@@ -153,3 +154,21 @@ def test_an_upload_cannot_resize_the_index_in_the_middle_of_a_question(monkeypat
     assert context and seen["before"] == seen["after"] == ei.MIN_CAPACITY
     assert index.get_current_count() == len(chunks) + 10 > index.get_max_elements() // 2
 
+
+
+
+def test_search_falls_back_to_exact_when_the_filtered_walk_fails(small_chunks):
+    # hnswlib raises "Cannot return the results in a contiguous 2D array" when a filtered walk finds fewer than k
+    class FlakyIndex(hnswlib.Index):
+        def knn_query(self, data, k=1, num_threads=-1, filter=None):
+            if filter is not None:
+                raise RuntimeError("Cannot return the results in a contiguous 2D array. Probably ef or M is too small")
+            return super().knn_query(data, k=k, num_threads=num_threads)
+
+    _, chunks = ei.generate_embeddings("cccc dddd " * 12, source="a.txt")
+    _, newer = ei.generate_embeddings("aaaa bbbb " * 30, source="b.txt")
+    index = FlakyIndex(space="cosine", dim=26)
+    index.init_index(max_elements=len(chunks) + len(newer))
+    index.add_items(np.array(FakeEmbeddings().embed_documents(chunks + newer)), list(range(len(chunks) + len(newer))))
+    context = ei.fetch_relevant_data(ei.generate_query_embedding("aaaa bbbb"), index, chunks)
+    assert context.count("[Source: a.txt]") == len(chunks) and "[Source: b.txt]" not in context
