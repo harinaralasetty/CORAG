@@ -24,7 +24,7 @@ CORAG is a single-user local web app. `server.py` builds the NiceGUI interface a
 ## Adding a file
 
 1. The upload box accepts `.pdf`, `.mp3` and `.wav`, up to 200 MB each. Uploading into an empty view creates a new chat.
-2. PDFs are read with PyPDF2. WAV goes straight to `speech_recognition.AudioFile`; MP3 is first decoded in memory to 16-bit WAV with `soundfile`, which bundles libsndfile, so no ffmpeg is needed. Transcription calls Google's Web Speech service over the network.
+2. PDFs are read with PyPDF2. WAV goes straight to `speech_recognition.AudioFile`; MP3 is first decoded in memory to 16-bit WAV with `soundfile`, which bundles libsndfile, so no ffmpeg is needed. Recordings longer than 60 minutes are refused, MP3 before it is decoded and WAV from its header. Transcription calls Google's Web Speech service over the network, one request per segment of up to 45 seconds, because the free service rejects or cuts off long requests; segments with no recognisable speech are skipped and the texts are joined with spaces.
 3. The first 2,000 characters become the chat's "document theme", used later to rephrase questions.
 4. Text is split into 1,000-character chunks with 200 characters of overlap (`CHUNK_SETTINGS` in `config.py`).
 5. Chunks are embedded in batches of 100 with the chat's embedding provider. A chat keeps the provider it started with, because vectors from different providers cannot be mixed.

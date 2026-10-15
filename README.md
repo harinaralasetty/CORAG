@@ -110,7 +110,7 @@ The tests use fake embeddings and models, so they need no API keys.
 
 | Area | Details |
 | --- | --- |
-| **Documents** | PDF text extraction with ligature and line-break cleanup; MP3 and WAV speech-to-text; several files per chat |
+| **Documents** | PDF text extraction with ligature and line-break cleanup; MP3 and WAV speech-to-text in segments of up to 45 seconds; several files per chat |
 | **Retrieval** | Question rephrased by the model, HNSW cosine search over 1,000-character chunks, top 20 re-sorted by similarity |
 | **Answers** | Nine Gemini and Claude models; prompts carry passages, file names and chat history, and ask the model to name its sources |
 | **Embeddings** | Google, Voyage, OpenAI or a local sentence-transformers model |
@@ -141,7 +141,7 @@ This screenshot is from an earlier Streamlit version of CORAG. The current NiceG
 
 **Does my data leave my computer?** Yes, for answers: your question and the retrieved passages go to Gemini or Claude, and audio goes to Google's Web Speech service. Extracted text, chats and indexes are stored only in the local `data/` folder. With the local embedding model, document text is not sent anywhere for embedding.
 
-**Which files can I upload?** PDFs with a text layer, and MP3 or WAV audio (MP3 files longer than 60 minutes are refused). Scanned PDFs need OCR first.
+**Which files can I upload?** PDFs with a text layer, and MP3 or WAV audio (recordings longer than 60 minutes are refused). Scanned PDFs need OCR first.
 
 **Can I change the embedding provider in an existing chat?** No. Vectors from different providers cannot be mixed, so a chat keeps its first provider. Start a new chat to use another.
 
