@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="880" height="320" viewBox="0 0 880 320" role="img" aria-labelledby="t d">
+  <title id="t">How CORAG answers a question about your documents</title>
+  <desc id="d">Adding a file: extract text from a PDF or transcribe a WAV, split it into 1,000-character chunks, embed them with Google, Voyage, OpenAI or a local model, and store them in an HNSW index saved in data. Asking: the LLM rephrases the question, the 20 nearest chunks are retrieved from that chat's index and re-sorted, a prompt is built with the passages, chat history and optional tool results, and Gemini or Claude answers naming the source file.</desc>
+  <style>
+    .b{fill:#161b22;stroke:#30363d}.h{font:600 14px ui-sans-serif,system-ui,-apple-system,'Segoe UI',sans-serif;fill:#e6edf3}
+    .s{font:12px ui-sans-serif,system-ui,-apple-system,'Segoe UI',sans-serif;fill:#8b949e}
+    .r{font:600 12px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;fill:#7ee787}
+    .a{stroke:#58a6ff;stroke-width:2;fill:none}.dash{stroke:#58a6ff;stroke-width:1.5;fill:none;stroke-dasharray:5 4}
+  </style>
+  <defs><marker id="m" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0 0L7 4L0 8z" fill="#58a6ff"/></marker></defs>
+  <rect x="1" y="1" width="878" height="318" rx="12" fill="#0d1117" stroke="#30363d"/>
+
+  <text class="r" x="24" y="32">When you add a file (PDF or WAV)</text>
+  <g>
+    <rect class="b" x="24" y="44" width="186" height="84" rx="8"/><text class="h" x="117" y="72" text-anchor="middle">1 · Extract</text><text class="s" x="117" y="94" text-anchor="middle">PDF text (PyPDF2)</text><text class="s" x="117" y="112" text-anchor="middle">WAV speech-to-text</text>
+    <rect class="b" x="242" y="44" width="186" height="84" rx="8"/><text class="h" x="335" y="72" text-anchor="middle">2 · Chunk</text><text class="s" x="335" y="94" text-anchor="middle">1,000 characters</text><text class="s" x="335" y="112" text-anchor="middle">200 overlap, file name kept</text>
+    <rect class="b" x="460" y="44" width="186" height="84" rx="8"/><text class="h" x="553" y="72" text-anchor="middle">3 · Embed</text><text class="s" x="553" y="94" text-anchor="middle">Google, Voyage, OpenAI</text><text class="s" x="553" y="112" text-anchor="middle">or a local model</text>
+    <rect class="b" x="678" y="44" width="186" height="84" rx="8"/><text class="h" x="771" y="72" text-anchor="middle">4 · Index</text><text class="s" x="771" y="94" text-anchor="middle">HNSW, cosine</text><text class="s" x="771" y="112" text-anchor="middle">saved per chat in data/</text>
+  </g>
+  <path class="a" d="M210 86H238" marker-end="url(#m)"/><path class="a" d="M428 86H456" marker-end="url(#m)"/><path class="a" d="M646 86H674" marker-end="url(#m)"/>
+
+  <path class="dash" d="M771 128V150H335V178" marker-end="url(#m)"/>
+  <text class="s" x="553" y="143" text-anchor="middle">the chat's index</text>
+
+  <text class="r" x="24" y="172">When you ask</text>
+  <g>
+    <rect class="b" x="24" y="184" width="186" height="84" rx="8"/><text class="h" x="117" y="212" text-anchor="middle">1 · Rephrase</text><text class="s" x="117" y="234" text-anchor="middle">LLM sharpens the question</text><text class="s" x="117" y="252" text-anchor="middle">using the document theme</text>
+    <rect class="b" x="242" y="184" width="186" height="84" rx="8"/><text class="h" x="335" y="212" text-anchor="middle">2 · Retrieve</text><text class="s" x="335" y="234" text-anchor="middle">20 nearest chunks</text><text class="s" x="335" y="252" text-anchor="middle">re-sorted by similarity</text>
+    <rect class="b" x="460" y="184" width="186" height="84" rx="8"/><text class="h" x="553" y="212" text-anchor="middle">3 · Prompt</text><text class="s" x="553" y="234" text-anchor="middle">passages + chat history</text><text class="s" x="553" y="252" text-anchor="middle">+ tool results*</text>
+    <rect class="b" x="678" y="184" width="186" height="84" rx="8"/><text class="h" x="771" y="212" text-anchor="middle">4 · Answer</text><text class="s" x="771" y="234" text-anchor="middle">Gemini or Claude</text><text class="s" x="771" y="252" text-anchor="middle">names the source file</text>
+  </g>
+  <path class="a" d="M210 226H238" marker-end="url(#m)"/><path class="a" d="M428 226H456" marker-end="url(#m)"/><path class="a" d="M646 226H674" marker-end="url(#m)"/>
+
+  <text class="s" x="24" y="300">* Calculator and web search (SerpApi or Tavily) are offered to Gemini models only. Chats and indexes stay in data/ between runs.</text>
+</svg>
