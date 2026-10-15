@@ -18,6 +18,7 @@ CORAG is a single-user local web app. `server.py` builds the NiceGUI interface a
 | `inference/model_router.py` | Sends a prompt to Gemini (LangChain) or Claude (Anthropic SDK). |
 | `toolkit/` | `calculator` (arithmetic only, parsed with `ast`) and `search` (SerpApi or Tavily). |
 | `chat_management/chat_utils.py` | Reads and writes `chat_threads_info.json`; formats chat history. |
+| `file_utils.py` | Crash-safe saves: temp file in the same folder, fsync, then rename into place. |
 | `prompts/` | The answer, query-rephrasing and chat-naming prompts. |
 | `tests/` | pytest suite with fake embeddings and models; drives the real NiceGUI page. |
 

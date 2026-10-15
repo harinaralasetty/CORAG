@@ -3,6 +3,7 @@ import json
 from typing import Dict, Any
 
 from config import DATA_DIR
+from file_utils import save_json_atomic
 
 THREADS_INFO_FILE = os.path.join(DATA_DIR, "chat_threads_info.json")
 
@@ -24,8 +25,7 @@ def load_chat_threads_info() -> Dict[str, Any]:
 
 def save_chat_threads_info(chat_threads_info: Dict[str, Any]) -> None:
     ensure_data_directory_exists()
-    with open(THREADS_INFO_FILE, "w", encoding="utf-8") as f:
-        json.dump(chat_threads_info, f, indent=4)
+    save_json_atomic(THREADS_INFO_FILE, chat_threads_info, indent=4)
 
 
 def format_exchange(message):

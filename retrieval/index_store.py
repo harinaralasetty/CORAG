@@ -4,6 +4,8 @@ import os
 
 import hnswlib
 
+from file_utils import fsync_file, make_temp_path, write_json_temp
+
 INDEX_FILE = "index.bin"
 CHUNKS_FILE = "chunks.json"
 MIN_CAPACITY = 1024
@@ -13,9 +15,20 @@ EF_SEARCH = 50
 def save_thread_index(base_dir, thread_id, index, texts):
     folder = os.path.join(base_dir, thread_id)
     os.makedirs(folder, exist_ok=True)
-    index.save_index(os.path.join(folder, INDEX_FILE))
-    with open(os.path.join(folder, CHUNKS_FILE), "w", encoding="utf-8") as f:
-        json.dump({"dim": index.dim, "texts": texts}, f)
+    index_path = os.path.join(folder, INDEX_FILE)
+    chunks_path = os.path.join(folder, CHUNKS_FILE)
+    index_tmp = make_temp_path(index_path)
+    try:
+        index.save_index(index_tmp)
+        fsync_file(index_tmp)
+        chunks_tmp = write_json_temp(chunks_path, {"dim": index.dim, "texts": texts})
+    except BaseException:
+        os.remove(index_tmp)
+        raise
+    # Chunks go in last. A crash between the two renames leaves a new index with old chunks;
+    # their counts differ (the index only grows), so load_thread_index rejects the pair.
+    os.replace(index_tmp, index_path)
+    os.replace(chunks_tmp, chunks_path)
 
 
 def load_thread_index(base_dir, thread_id):

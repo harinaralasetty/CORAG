@@ -100,3 +100,21 @@ def test_new_chunks_do_not_crowd_out_the_questions_own_chunks(small_chunks):
     assert index.get_current_count() > len(chunks) + 20
     context = ei.fetch_relevant_data(ei.generate_query_embedding("aaaa bbbb"), index, chunks)
     assert "[Source: a.txt]" in context and "[Source: b.txt]" not in context
+
+
+def test_a_crash_while_saving_keeps_the_previous_index(tmp_path, small_chunks, monkeypatch):
+    index, chunks = ei.generate_embeddings("hello world " * 30, source="a.txt")
+    save_thread_index(str(tmp_path), "t3", index, chunks)
+    index, more = ei.generate_embeddings("zzzz qqqq " * 30, vectors=index, source="b.txt")
+
+    def crash_midway(obj, fp, **kwargs):
+        fp.write('{"dim": 26, "te')
+        raise OSError("disk full")
+
+    with monkeypatch.context() as m, pytest.raises(OSError):
+        m.setattr(json, "dump", crash_midway)
+        save_thread_index(str(tmp_path), "t3", index, chunks + more)
+
+    loaded, loaded_chunks = load_thread_index(str(tmp_path), "t3")
+    assert loaded_chunks == chunks and loaded.get_current_count() == len(chunks)
+    assert sorted(p.name for p in (tmp_path / "t3").iterdir()) == ["chunks.json", "index.bin"]
