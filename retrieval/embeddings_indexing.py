@@ -120,6 +120,10 @@ def fetch_relevant_data(query_vector, embeddings, original_texts):
         return ""
 
     most_relevant_indexes = find_closest_embeddings_hnsw(query_vector, embeddings)
+    # An upload may grow the shared index while a question is answered; skip chunks newer than original_texts
+    most_relevant_indexes = [i for i in most_relevant_indexes if i < len(original_texts)]
+    if not most_relevant_indexes:
+        return ""
     candidate_vectors = [embeddings.get_items([i])[0] for i in most_relevant_indexes]
     reranked_indexes = rerank_results(query_vector, candidate_vectors, most_relevant_indexes)
     return "\n\n".join(original_texts[i] for i in reranked_indexes)

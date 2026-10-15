@@ -83,3 +83,11 @@ def test_missing_or_corrupt_index_loads_as_empty(tmp_path, small_chunks):
     data["texts"] = data["texts"][:-1]
     meta.write_text(json.dumps(data))
     assert load_thread_index(str(tmp_path), "t2") == (None, [])
+
+
+def test_chunks_added_while_a_question_is_answered_are_ignored(small_chunks):
+    # The question holds the chunk list it started with; an upload meanwhile grows the shared index in place
+    index, chunks = ei.generate_embeddings("aaaa bbbb " * 20, source="a.txt")
+    ei.generate_embeddings("zzzz qqqq " * 20, vectors=index, source="b.txt")
+    context = ei.fetch_relevant_data(ei.generate_query_embedding("zzzz qqqq"), index, chunks)
+    assert context and "[Source: b.txt]" not in context
