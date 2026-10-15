@@ -245,8 +245,10 @@ async def submit_question() -> None:
     thread = S.chat_threads[S.current_thread_id]
     vectors, original_data = get_thread_index(S.current_thread_id)
 
-    # Show user message immediately with a placeholder answer
-    thread.setdefault('messages', []).append({'user': question, 'answer': '_thinking…_'})
+    # Show user message immediately with a placeholder answer. Keep a handle on this exchange:
+    # another question may be appended while this one is being answered.
+    exchange = {'user': question, 'answer': '_thinking…_'}
+    thread.setdefault('messages', []).append(exchange)
     refresh_all()
 
     try:
@@ -262,7 +264,7 @@ async def submit_question() -> None:
             embedding_provider=thread.get('embedding_provider', S.selected_embedding_provider),
             document_names=[f['name'] for f in thread.get('processed_files', [])],
         )
-        thread['messages'][-1]['answer'] = answer
+        exchange['answer'] = answer
 
         if thread.get('name') == 'Temporary Thread':
             try:
@@ -274,7 +276,7 @@ async def submit_question() -> None:
         thread['last_updated_at'] = datetime.now().isoformat()
         save_chat_threads_info(S.chat_threads)
     except Exception as ex:
-        thread['messages'][-1]['answer'] = f'**Error:** {ex}'
+        exchange['answer'] = f'**Error:** {ex}'
         traceback.print_exc()
 
     refresh_all()

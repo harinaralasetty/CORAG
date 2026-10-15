@@ -144,3 +144,30 @@ async def test_chat_and_documents_survive_a_restart(user: User, monkeypatch):
 
     answer = await ask(user, "What about zebras now", answers_wanted=len(before["messages"]) + 1)
     assert "[Source: zebras.pdf]" in answer and "[Source: apples.pdf]" in answer
+
+
+async def test_two_questions_in_flight_each_keep_their_own_answer(user: User, monkeypatch):
+    install_fakes(monkeypatch)
+
+    class SlowAgent:
+        def run(self, user_input, **kwargs):
+            time.sleep(1.0 if user_input == "first question" else 0.1)
+            return f"REPLY|{user_input}"
+
+    monkeypatch.setattr(im, "initialize_agent", lambda *args, **kwargs: SlowAgent())
+    await user.open("/")
+    user.find(ui.input).type("first question").trigger("keydown.enter")
+    await asyncio.sleep(0.2)
+    user.find(ui.input).type("second question").trigger("keydown.enter")
+
+    def messages():
+        for thread in read_threads().values():
+            if any(m["user"] == "first question" for m in thread["messages"]):
+                return thread["messages"]
+        return []
+
+    await wait_for(lambda: any(m["answer"] == "REPLY|first question" for m in messages()))
+    assert [(m["user"], m["answer"]) for m in messages()] == [
+        ("first question", "REPLY|first question"),
+        ("second question", "REPLY|second question"),
+    ]
