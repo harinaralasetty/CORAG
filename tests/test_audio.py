@@ -1,7 +1,9 @@
 """Decode real audio through transcribe_audio; only the network call to Google is faked."""
 import os
+import types
 
 import pytest
+import soundfile as sf
 import speech_recognition as sr
 
 from preprocessing.audio_processor import transcribe_audio
@@ -38,4 +40,16 @@ def test_unreadable_mp3_gives_a_clear_error(heard, tmp_path):
     bad.write_bytes(b"this is not audio")
     with pytest.raises(ValueError, match="Could not decode the MP3 file"):
         transcribe_audio(str(bad))
+    assert heard == []
+
+
+def test_very_long_mp3_is_refused_before_it_is_decoded(heard, monkeypatch):
+    monkeypatch.setattr(sf, "info", lambda path: types.SimpleNamespace(duration=7200))
+
+    def must_not_decode(*args, **kwargs):
+        raise AssertionError("a refused file must not be decoded")
+
+    monkeypatch.setattr(sf, "read", must_not_decode)
+    with pytest.raises(ValueError, match="120 minutes long"):
+        transcribe_audio(os.path.join(FIXTURES, "speech_sample.mp3"))
     assert heard == []
