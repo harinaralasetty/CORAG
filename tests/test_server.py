@@ -10,6 +10,8 @@ from langchain_core.runnables import RunnableLambda
 from nicegui import ui
 from nicegui.elements.upload_files import SmallFileUpload
 from nicegui.testing import User
+from nicegui.testing.general_fixtures import get_path_to_main_file
+from nicegui.testing.user_simulation import user_simulation
 
 import config
 from inference import inference_manager as im
@@ -193,3 +195,55 @@ async def test_a_failed_answer_is_saved_to_disk(user: User, monkeypatch):
 
     await wait_for(lambda: saved_answer().startswith("**Error:**"))  # a restart would otherwise show "_thinking…_"
     assert "model unavailable" in saved_answer()
+
+
+async def test_a_chat_whose_index_cannot_be_loaded_asks_for_a_reupload(request, monkeypatch, caplog):
+    install_fakes(monkeypatch)
+    tid = "broken-index-chat"
+    folder = os.path.join(config.DATA_DIR, tid)
+    os.makedirs(folder, exist_ok=True)
+    with open(os.path.join(folder, "index.bin"), "wb") as f:
+        f.write(b"\0" * 16)
+    with open(os.path.join(folder, "chunks.json"), "w", encoding="utf-8") as f:
+        f.write('{"dim": 26, "te')  # cut off mid-write
+    threads = read_threads()
+    threads[tid] = {
+        "name": "Broken Index Chat",
+        "messages": [],
+        "processed_files": [{"name": "lost.pdf", "type": "application/pdf"}],
+        "document_theme": "Lost",
+        "embedding_provider": "google",
+        "created_at": "2026-01-01T00:00:00",
+        "last_updated_at": "2026-01-01T00:00:00",
+    }
+    with open(THREADS_FILE, "w", encoding="utf-8") as f:
+        json.dump(threads, f)
+
+    async with user_simulation(main_file=get_path_to_main_file(request)) as user:  # app starts after the damage
+        await user.open("/")
+        user.find(content="Broken Index Chat").click()
+        await user.should_see("No files uploaded yet.")
+        assert user.notify.contains("must be re-uploaded: lost.pdf")
+
+    assert read_threads()[tid]["processed_files"] == []
+    assert tid in caplog.text
+
+
+async def test_the_same_file_uploaded_twice_at_once_is_processed_once(user: User, monkeypatch):
+    install_fakes(monkeypatch)
+    await user.open("/")
+    element = user.find(ui.upload).elements.pop()
+    data = make_pdf("Twins share one birthday and one cake.")
+    await element.handle_uploads([
+        SmallFileUpload(name="twins.pdf", content_type="application/pdf", _data=data),
+        SmallFileUpload(name="twins.pdf", content_type="application/pdf", _data=data),
+    ])
+
+    def outcomes():
+        return [m for m in user.notify.messages if m in ("Processed twins.pdf", "twins.pdf already processed")]
+
+    await wait_for(lambda: len(outcomes()) == 2)
+    assert sorted(outcomes()) == ["Processed twins.pdf", "twins.pdf already processed"]
+    files = [t["processed_files"] for t in read_threads().values()
+             if any(f["name"] == "twins.pdf" for f in t["processed_files"])]
+    assert files == [[{"name": "twins.pdf", "type": "application/pdf"}]]

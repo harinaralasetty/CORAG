@@ -20,9 +20,8 @@ def clean_extracted_text_v2(text):
 
 def process_pdf(file):
     pdf_reader = PyPDF2.PdfReader(file)  # PyPDF2 expects a binary file-like object
-    extracted_text = ""
-    for page in pdf_reader.pages:  # Access the pages directly
-        extracted_text += page.extract_text()
+    # A newline between pages keeps words apart; the cleanup below turns it into a space or re-joins a hyphenated word
+    extracted_text = "\n".join(page.extract_text() for page in pdf_reader.pages)
 
     extracted_text = clean_extracted_text_v2(extracted_text)
     # Determine document theme if applicable

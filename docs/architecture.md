@@ -18,6 +18,7 @@ CORAG is a single-user local web app. `server.py` builds the NiceGUI interface a
 | `inference/model_router.py` | Sends a prompt to Gemini (LangChain) or Claude (Anthropic SDK). |
 | `toolkit/` | `calculator` (arithmetic only, parsed with `ast`) and `search` (SerpApi or Tavily). |
 | `chat_management/chat_utils.py` | Reads and writes `chat_threads_info.json`; formats chat history. |
+| `file_utils.py` | Crash-safe saves: temp file in the same folder, fsync, then rename into place. |
 | `prompts/` | The answer, query-rephrasing and chat-naming prompts. |
 | `tests/` | pytest suite with fake embeddings and models; drives the real NiceGUI page. |
 
@@ -40,6 +41,10 @@ CORAG is a single-user local web app. `server.py` builds the NiceGUI interface a
 5. Gemini models get the `calculator` and `search` tools bound through LangChain. If the model calls a tool, its output is added to the prompt and the model is asked again. If the tool chain fails, the plain prompt is sent to Gemini instead.
 6. Claude models get the plain prompt with no tools.
 7. After the first answer in a new chat, the model names the chat (`prompts/chat_naming.txt`).
+
+## Saved data
+
+Saves write a temp file in the same folder, fsync it and rename it over the old file, so a crash leaves the old or the new version. A chat's chunk texts are renamed after its index, and loading checks that the index holds one vector per chunk. If a chat still lists files but its index is missing, unreadable or mismatched, opening the chat logs a warning, clears its file list, document theme and embedding provider on disk, and shows a warning (until closed) naming the files to upload again. The chat and its messages stay usable, and the next upload builds a fresh index that replaces the broken files.
 
 ## Limits
 

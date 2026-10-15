@@ -5,6 +5,7 @@ Layout: header (logo + chat title), left drawer (models + chats), right drawer
 """
 import asyncio
 import io
+import logging
 import os
 import tempfile
 import traceback
@@ -33,11 +34,13 @@ class State:
     current_thread_id: str | None = None
     vectors_per_thread: dict = {}
     text_per_thread: dict = {}
+    uploads_in_progress: set = set()  # (chat id, file name) pairs still being processed
     selected_model: str = config.default_model()
     selected_embedding_provider: str = config.default_embedding_provider()
 
 
 S = State()
+log = logging.getLogger(__name__)
 UPLOAD_LOCK = asyncio.Lock()  # one embedding job at a time keeps each chat's index consistent
 
 
@@ -48,11 +51,23 @@ def get_thread_index(tid: str):
         index, chunks = load_thread_index(config.DATA_DIR, tid)
         S.vectors_per_thread[tid] = index
         S.text_per_thread[tid] = chunks
+        thread = S.chat_threads.get(tid, {})
+        lost = [f['name'] for f in thread.get('processed_files', [])]
+        if index is None and lost:
+            # The chat lists files but their text is gone: forget them so questions don't silently lack context
+            log.warning('Index of chat %s could not be loaded; cleared its files: %s', tid, lost)
+            thread['processed_files'] = []
+            thread['document_theme'] = ''
+            thread.pop('embedding_provider', None)
+            save_chat_threads_info(S.chat_threads)
+            ui.notify(f"This chat's documents could not be loaded and must be re-uploaded: {', '.join(lost)}",
+                      type='warning', timeout=0, close_button=True)
     return S.vectors_per_thread[tid], S.text_per_thread[tid]
 
 
 def select_thread(tid: str) -> None:
     S.current_thread_id = tid
+    get_thread_index(tid)  # load now, so a broken index is reported when the chat is opened
     refresh_all()
 
 
@@ -161,9 +176,10 @@ async def handle_upload(e) -> None:
 
     tid = S.current_thread_id  # the user may switch chats while a file is processing
     thread = S.chat_threads[tid]
-    if any(f['name'] == name for f in thread.get('processed_files', [])):
+    if (tid, name) in S.uploads_in_progress or any(f['name'] == name for f in thread.get('processed_files', [])):
         ui.notify(f'{name} already processed', type='info')
         return
+    S.uploads_in_progress.add((tid, name))
 
     notif = ui.notification(f'Processing {name}…', spinner=True, timeout=None)
 
@@ -220,6 +236,8 @@ async def handle_upload(e) -> None:
         notif.dismiss()
         traceback.print_exc()
         ui.notify(f'Upload error: {ex}', type='negative')
+    finally:
+        S.uploads_in_progress.discard((tid, name))
 
 
 # ---------- Chat submission ----------
