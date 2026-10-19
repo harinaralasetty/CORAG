@@ -145,9 +145,9 @@ More detail in [Architecture](docs/architecture.md).
 
 ## Screenshots
 
-<img src="Screenshot.png" alt="Earlier CORAG interface: chat list and model picker on the left, document upload box for PDF, MP3 and WAV, greeting message and question box" width="880">
+<img src="Screenshot.png" alt="CORAG answering a question from an uploaded plum orchard handbook PDF: model picker set to ollama/qwen2.5:3b and local embeddings on the left, the question and an answer citing late July and 4 degrees Celsius in the middle, the PDF in the Documents panel on the right" width="880">
 
-This screenshot is from an earlier Streamlit version of CORAG. The current NiceGUI interface has the same parts in a three-column layout: models, embeddings and chats on the left, the conversation in the middle, documents on the right.
+The current interface, running fully on one computer: a local `qwen2.5:3b` model through Ollama, local embeddings and no API key. The answer comes from the uploaded two-page PDF.
 
 ## FAQ
 
