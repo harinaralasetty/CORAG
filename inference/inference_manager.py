@@ -144,11 +144,12 @@ def process_answer(
     return response.content if hasattr(response, 'content') else response
 
 
-def process_embeddings(text, embedding_provider="google", vectors=None, source=None):
+def process_embeddings(text, embedding_provider="google", vectors=None, source=None, page_starts=None):
     """Chunk and embed text, adding it to an existing index when one is given.
 
     Returns (index, chunks) where chunks are only the newly created ones.
     """
     if not text:
         return vectors, []
-    return generate_embeddings(text, vectors=vectors, embedding_provider=embedding_provider, source=source)
+    return generate_embeddings(text, vectors=vectors, embedding_provider=embedding_provider, source=source,
+                               page_starts=page_starts)

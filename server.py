@@ -188,9 +188,10 @@ async def handle_upload(e) -> None:
         content = await file.read()
         name_lower = name.lower()
 
+        page_starts = None  # PDFs only: where each page begins, so passages can cite their page
         if name_lower.endswith('.pdf'):
             file_like = io.BytesIO(content)
-            extracted_text, theme = await asyncio.to_thread(process_pdf, file_like)
+            extracted_text, theme, page_starts = await asyncio.to_thread(process_pdf, file_like)
         elif name_lower.endswith(('.txt', '.md')):
             extracted_text, theme = process_text(content)
         elif name_lower.endswith(('.mp3', '.wav')):
@@ -221,7 +222,7 @@ async def handle_upload(e) -> None:
         async with UPLOAD_LOCK:
             index, chunks = get_thread_index(tid)
             index, new_chunks = await asyncio.to_thread(
-                process_embeddings, extracted_text, provider, index, name,
+                process_embeddings, extracted_text, provider, index, name, page_starts,
             )
             chunks = chunks + new_chunks
             S.vectors_per_thread[tid] = index

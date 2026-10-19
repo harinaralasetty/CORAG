@@ -1,4 +1,5 @@
 import threading
+from bisect import bisect_right
 import weakref
 from math import ceil
 from time import time
@@ -65,7 +66,14 @@ def _chunk_overlapping(text, chunk_size, overlap):
     return chunks
 
 
-def generate_embeddings(extracted_text, vectors=None, embedding_provider="google", source=None):
+def page_label(start, end, page_starts):
+    """'page 3' or 'pages 3-4' for the text between offsets start and end (exclusive)."""
+    first = bisect_right(page_starts, start)
+    last = bisect_right(page_starts, max(start, end - 1))
+    return f"page {first}" if first == last else f"pages {first}-{last}"
+
+
+def generate_embeddings(extracted_text, vectors=None, embedding_provider="google", source=None, page_starts=None):
     chunk_size = config.CHUNK_SETTINGS["CHUNK_SIZE"]
     chunk_overlap = config.CHUNK_SETTINGS["CHUNK_OVERLAP"]
     if chunk_overlap >= chunk_size:
@@ -99,7 +107,11 @@ def generate_embeddings(extracted_text, vectors=None, embedding_provider="google
         add_to_index(vectors, vector_lst)
 
     # The label is stored with the chunk (not embedded) so answers can cite the file
-    if source:
+    if source and page_starts:
+        step = chunk_size - chunk_overlap  # chunk i starts at i * step (see _chunk_overlapping)
+        texts = [f"[Source: {source}, {page_label(i * step, i * step + len(t), page_starts)}]\n{t}"
+                 for i, t in enumerate(texts)]
+    elif source:
         texts = [f"[Source: {source}]\n{t}" for t in texts]
     return vectors, texts
 
