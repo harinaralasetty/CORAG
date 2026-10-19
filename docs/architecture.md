@@ -15,7 +15,7 @@ CORAG is a single-user local web app. `server.py` builds the NiceGUI interface a
 | `retrieval/embeddings_indexing.py` | Chunking, batching, HNSW index build and growth, nearest-neighbour search and re-sorting. |
 | `retrieval/index_store.py` | Saves and loads each chat's index (`index.bin`) and chunk texts (`chunks.json`). |
 | `inference/inference_manager.py` | `CustomAgentExecutor`: rephrase, retrieve, build the prompt, call tools or the model. |
-| `inference/model_router.py` | Sends a prompt to Gemini (LangChain) or Claude (Anthropic SDK). |
+| `inference/model_router.py` | Sends a prompt to Gemini (LangChain), Claude (Anthropic SDK) or an `ollama/` model (OpenAI client pointed at `OLLAMA_BASE_URL`). |
 | `toolkit/` | `calculator` (arithmetic only, parsed with `ast`) and `search` (SerpApi or Tavily). |
 | `chat_management/chat_utils.py` | Reads and writes `chat_threads_info.json`; formats chat history. |
 | `file_utils.py` | Crash-safe saves: temp file in the same folder, fsync, then rename into place. |
@@ -39,7 +39,7 @@ CORAG is a single-user local web app. `server.py` builds the NiceGUI interface a
 3. The 20 nearest chunks (or fewer) are fetched from the HNSW index and re-sorted by cosine similarity.
 4. `prompts/base_prompt.txt` is filled with the passages, the uploaded file names, the chat's earlier exchanges and the agent's last five messages.
 5. Gemini models get the `calculator` and `search` tools bound through LangChain. If the model calls a tool, its output is added to the prompt and the model is asked again. If the tool chain fails, the plain prompt is sent to Gemini instead.
-6. Claude models get the plain prompt with no tools.
+6. Claude and Ollama models get the plain prompt with no tools.
 7. After the first answer in a new chat, the model names the chat (`prompts/chat_naming.txt`).
 
 Uploads and questions run on worker threads, so a question can search a chat's index while an upload grows it. Each index has a lock, held for one add (including any resize) or for one question's search; a question only uses the chunks that existed when it was asked, and exchanges still waiting for an answer are left out of the chat history.
@@ -52,7 +52,7 @@ Saves write a temp file in the same folder, fsync it and rename it over the old 
 
 ## Limits
 
-- Answers come from cloud models; the question and retrieved passages are sent to Google or Anthropic.
+- With Gemini or Claude, the question and retrieved passages are sent to Google or Anthropic. Ollama models run wherever `OLLAMA_BASE_URL` points, by default this computer.
 - No OCR: scanned PDFs without a text layer produce no text.
 - Retrieval sends up to 20 chunks to the model for every question, regardless of how relevant they are.
 - App state is shared by every open browser tab; it is not built for several users.

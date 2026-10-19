@@ -6,7 +6,7 @@ from langchain.memory import ConversationBufferMemory
 from config import BASE_PROMPT
 from inference.gemini_interaction import generate_gemini_response, get_model_instance
 from inference.llm_error import LLMError
-from inference.model_router import generate_response, is_claude
+from inference.model_router import generate_response, uses_tools
 from preprocessing.prompt_processor import rephrase_prompt
 from retrieval.embeddings_indexing import (
     fetch_relevant_data,
@@ -62,9 +62,9 @@ class CustomAgentExecutor:
 
         prompt = build_prompt()
 
-        # Claude path: skip langchain tool chain (no langchain-anthropic to avoid
+        # Claude and Ollama path: skip langchain tool chain (no langchain-anthropic to avoid
         # version conflicts with langchain-google-genai). Plain message → response.
-        if is_claude(inference_model):
+        if not uses_tools(inference_model):
             response = generate_response(prompt, inference_model)
             self.memory.chat_memory.add_ai_message(response)
             return response
@@ -87,8 +87,8 @@ def initialize_agent(thread_name, original_data=None, vectors=None, inference_mo
     key_name = f"{thread_name}_{inference_model}"
 
     if key_name not in agents:
-        if is_claude(inference_model):
-            # Claude path bypasses the langchain tool chain entirely
+        if not uses_tools(inference_model):
+            # Claude and Ollama bypass the langchain tool chain entirely
             llm = None
             llm_with_tools = None
         else:
