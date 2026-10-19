@@ -30,7 +30,7 @@ CORAG is a single-user local web app. `server.py` builds the NiceGUI interface a
 3. The first 2,000 characters become the chat's "document theme", used later to rephrase questions.
 4. Text is split into 1,000-character chunks with 200 characters of overlap (`CHUNK_SETTINGS` in `config.py`).
 5. Chunks are embedded in batches of 100 with the chat's embedding provider. A chat keeps the provider it started with, because vectors from different providers cannot be mixed.
-6. Vectors go into an `hnswlib` cosine index (`M=30`, `ef_construction=500`), which grows as files are added. Each stored chunk is prefixed with `[Source: <file name>]` so answers can cite it.
+6. Vectors go into an `hnswlib` cosine index (`M=30`, `ef_construction=500`), which grows as files are added. Each stored chunk is prefixed with `[Source: <file name>]` so answers can cite it; PDF chunks add the page, `[Source: <file name>, page 3]` or `pages 3-4` when a chunk crosses a page break. The PDF cleanup keeps an offset map (`clean_with_offsets` in `preprocessing/pdf_processor.py`) so page starts are exact in the cleaned text. The page is the page's position in the file, which can differ from the number printed on it (for example after roman-numeral front matter). Chats indexed before this change keep their old labels.
 7. The index and chunks are saved under `data/<chat id>/`, and the chat record under `data/chat_threads_info.json`.
 
 ## Asking a question

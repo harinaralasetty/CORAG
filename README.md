@@ -6,7 +6,7 @@
 
 ### Chat with your PDFs and voice recordings in your browser.
 
-**Open-source RAG chat app for PDF and audio documents, written in Python with NiceGUI.** Upload files, ask questions in plain language and get answers from Google Gemini, Anthropic Claude or a local model through Ollama that name the file they came from, with HNSW vector search, cloud or local embeddings, and chats that are still there after a restart.
+**Open-source RAG chat app for PDF and audio documents, written in Python with NiceGUI.** Upload files, ask questions in plain language and get answers from Google Gemini, Anthropic Claude or a local model through Ollama that name the file (and PDF page) they came from, with HNSW vector search, cloud or local embeddings, and chats that are still there after a restart.
 
 [![Apache-2.0 license](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 [![Python 3.13](https://img.shields.io/badge/Python-3.13-3776AB.svg)](requirements.txt)
@@ -32,7 +32,7 @@ python server.py                  # open http://localhost:8080
 
 You have a stack of PDFs or recordings and want to ask them questions instead of scrolling through them.
 
-- **Ask across several files.** Add as many PDFs, text or Markdown files, or MP3 and WAV recordings to a chat as you like and ask about them together. Every passage is labelled with its file name, so answers can say where they came from.
+- **Ask across several files.** Add as many PDFs, text or Markdown files, or MP3 and WAV recordings to a chat as you like and ask about them together. Every passage is labelled with its file name, and PDF passages with their page, so answers can say where they came from.
 - **Pick your model.** Switch between Gemini, Claude and local Ollama models from a dropdown, per question.
 - **Embeddings without a key.** Use Google, Voyage or OpenAI embeddings, or a local sentence-transformers model that needs no API key.
 - **Chats survive restarts.** Chats, their file lists and their search indexes are saved in a local `data/` folder.
@@ -126,7 +126,7 @@ The tests use fake embeddings and models, so they need no API keys.
 | --- | --- |
 | **Documents** | PDF text extraction with ligature and line-break cleanup; plain text and Markdown (UTF-8); MP3 and WAV speech-to-text in segments of up to 45 seconds; several files per chat |
 | **Retrieval** | Question rephrased by the model, HNSW cosine search over 1,000-character chunks, top 20 re-sorted by similarity |
-| **Answers** | Nine Gemini and Claude models, or any local Ollama model; prompts carry passages, file names and chat history, and ask the model to name its sources |
+| **Answers** | Nine Gemini and Claude models, or any local Ollama model; prompts carry passages, file names, PDF page numbers and chat history, and ask the model to name its sources |
 | **Embeddings** | Google, Voyage, OpenAI or a local sentence-transformers model |
 | **Tools** | Arithmetic-only calculator and web search via SerpApi or Tavily (Gemini models) |
 | **Chats** | Automatic chat names, chat list, per-chat documents, saved to disk between runs |

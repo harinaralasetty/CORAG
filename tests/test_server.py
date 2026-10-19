@@ -131,7 +131,7 @@ async def test_two_files_in_one_chat_are_both_searchable(user: User, monkeypatch
     assert os.path.isfile(os.path.join(config.DATA_DIR, thread_id, "index.bin"))
 
     answer = await ask(user, "Tell me about zebras and apples", answers_wanted=1)
-    assert "[Source: apples.pdf]" in answer and "[Source: zebras.pdf]" in answer
+    assert "[Source: apples.pdf, page 1]" in answer and "[Source: zebras.pdf, page 1]" in answer
     assert "Tell me about zebras and apples" in answer
     assert "_thinking" not in answer  # the in-flight placeholder must not leak into the prompt
     assert read_threads()[thread_id]["name"] == "Test Chat"
@@ -147,7 +147,7 @@ async def test_chat_and_documents_survive_a_restart(user: User, monkeypatch):
     await user.should_see("zebras.pdf")  # documents of the chat are listed again
 
     answer = await ask(user, "What about zebras now", answers_wanted=len(before["messages"]) + 1)
-    assert "[Source: zebras.pdf]" in answer and "[Source: apples.pdf]" in answer
+    assert "[Source: zebras.pdf, page 1]" in answer and "[Source: apples.pdf, page 1]" in answer
 
 
 async def test_two_questions_in_flight_each_keep_their_own_answer(user: User, monkeypatch):

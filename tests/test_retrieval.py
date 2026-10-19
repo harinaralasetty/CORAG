@@ -172,3 +172,23 @@ def test_search_falls_back_to_exact_when_the_filtered_walk_fails(small_chunks):
     index.add_items(np.array(FakeEmbeddings().embed_documents(chunks + newer)), list(range(len(chunks) + len(newer))))
     context = ei.fetch_relevant_data(ei.generate_query_embedding("aaaa bbbb"), index, chunks)
     assert context.count("[Source: a.txt]") == len(chunks) and "[Source: b.txt]" not in context
+
+
+def test_pdf_chunks_cite_their_page_or_page_range(monkeypatch):
+    monkeypatch.setattr(ei, "get_embeddings_model", lambda provider: FakeEmbeddings())
+    monkeypatch.setitem(config.CHUNK_SETTINGS, "CHUNK_SIZE", 10)
+    monkeypatch.setitem(config.CHUNK_SETTINGS, "CHUNK_OVERLAP", 2)
+    text = "a" * 9 + "b" * 15  # page 2 starts at offset 9; chunks start at 0, 8, 16 (step 8, not 10)
+    _, chunks = ei.generate_embeddings(text, source="doc.pdf", page_starts=[0, 9])
+    assert [c.split("\n")[0] for c in chunks] == [
+        "[Source: doc.pdf, pages 1-2]", "[Source: doc.pdf, pages 1-2]", "[Source: doc.pdf, page 2]",
+    ]
+
+
+def test_page_label_skips_empty_pages():
+    assert ei.page_label(5, 9, [0, 5, 5]) == "page 3"
+    assert ei.page_label(0, 6, [0, 5, 5]) == "pages 1-3"
+
+
+def test_a_chunk_ending_at_a_page_break_stays_on_its_page():
+    assert ei.page_label(0, 5, [0, 5]) == "page 1"
