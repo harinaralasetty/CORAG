@@ -67,6 +67,15 @@ python server.py
 
 **4. Use it.** Drop a PDF, MP3 or WAV file into the **Documents** panel on the right, wait for "Processed", then type a question. Pick the model and embedding provider in the left panel; start a new chat with **+**.
 
+**Or run it with Docker**, with no Python setup: clone the repository, create `.env` as in step 2, then build and start the container and open [http://localhost:8080](http://localhost:8080):
+
+```sh
+docker build -t corag .
+docker run --rm -p 127.0.0.1:8080:8080 -v "$PWD/.env:/app/.env:ro" -v corag-data:/data corag
+```
+
+Chats, indexes and the downloaded local embedding model are kept in the `corag-data` volume. To use Ollama running on your computer from the container with Docker Desktop, set `OLLAMA_BASE_URL=http://host.docker.internal:11434/v1` in `.env`.
+
 <details>
 <summary><b>Settings, models, storage and tests</b></summary>
 
