@@ -550,5 +550,6 @@ ui.run(
     favicon='CORAG_ICON.png',
     show=False,
     reload=False,
+    host=config.HOST,
     port=8080,
 )

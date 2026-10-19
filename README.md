@@ -92,6 +92,7 @@ Chats, indexes and the downloaded local embedding model are kept in the `corag-d
 | `VOYAGE_API_KEY`, `OPENAI_API_KEY` | Voyage or OpenAI embeddings. |
 | `SEARCH_PROVIDER` | Web search tool: `serpapi` (default, needs `SERPER_API_KEY`) or `tavily` (needs `TAVILY_API_KEY`). Optional. |
 | `CORAG_DATA_DIR` | Where chats and indexes are stored. Default `data`. |
+| `CORAG_HOST` | Interface the app listens on. Default `127.0.0.1`, so only this computer can open it; there is no login, so set `0.0.0.0` only on a network you trust. |
 
 **Defaults.** The default model is `gemini-2.5-flash`, or `claude-haiku-4-5-20251001` when only an Anthropic key is set, or the first `CORAG_OLLAMA_MODELS` entry when neither cloud key is set. The default embedding provider is the first with a key in the order Google, Voyage, OpenAI; with none, the local `sentence-transformers/all-MiniLM-L6-v2` model is used (downloaded on first use).
 

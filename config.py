@@ -30,6 +30,10 @@ CHUNK_SETTINGS = {
 # where chats and their vector indexes are stored (survives restarts)
 DATA_DIR = os.environ.get("CORAG_DATA_DIR", "data")
 
+# Interface the web app listens on. Local only by default: chats and documents have no login.
+# The Docker image sets 0.0.0.0 so the published port reaches it.
+HOST = os.environ.get("CORAG_HOST", "127.0.0.1")
+
 PROMPT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "prompts")
 
 
