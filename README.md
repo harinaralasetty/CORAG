@@ -6,7 +6,7 @@
 
 ### Chat with your PDFs and voice recordings in your browser.
 
-**Open-source RAG chat app for PDF and audio documents, written in Python with NiceGUI.** Upload files, ask questions in plain language and get answers from Google Gemini or Anthropic Claude that name the file they came from, with HNSW vector search, cloud or local embeddings, and chats that are still there after a restart.
+**Open-source RAG chat app for PDF and audio documents, written in Python with NiceGUI.** Upload files, ask questions in plain language and get answers from Google Gemini, Anthropic Claude or a local model through Ollama that name the file they came from, with HNSW vector search, cloud or local embeddings, and chats that are still there after a restart.
 
 [![Apache-2.0 license](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 [![Python 3.13](https://img.shields.io/badge/Python-3.13-3776AB.svg)](requirements.txt)
@@ -17,7 +17,7 @@
 ```sh
 git clone https://github.com/harinaralasetty/CORAG.git && cd CORAG
 pip install -r requirements.txt   # inside a Python 3.13 virtual environment
-cp .env.example .env              # then add a Gemini or Claude API key
+cp .env.example .env              # then add a Gemini or Claude API key, or an Ollama model
 python server.py                  # open http://localhost:8080
 ```
 
@@ -26,14 +26,14 @@ python server.py                  # open http://localhost:8080
 </div>
 
 > [!NOTE]
-> CORAG's code is open source, but the answers come from cloud models. You need a Google Gemini or Anthropic Claude API key, and each question is sent to that provider together with the matching passages from your files. Embeddings can run on your machine; audio is transcribed by Google's Web Speech service.
+> With a Google Gemini or Anthropic Claude API key, each question is sent to that provider together with the matching passages from your files. To keep documents and questions on your machine, use a local [Ollama](https://ollama.com) model (at the default `OLLAMA_BASE_URL`) with the local embedding model. Audio is always transcribed by Google's Web Speech service.
 
 ## Why CORAG
 
 You have a stack of PDFs or recordings and want to ask them questions instead of scrolling through them.
 
 - **Ask across several files.** Add as many PDFs or MP3 and WAV recordings to a chat as you like and ask about them together. Every passage is labelled with its file name, so answers can say where they came from.
-- **Pick your model.** Switch between Gemini and Claude models from a dropdown, per question.
+- **Pick your model.** Switch between Gemini, Claude and local Ollama models from a dropdown, per question.
 - **Embeddings without a key.** Use Google, Voyage or OpenAI embeddings, or a local sentence-transformers model that needs no API key.
 - **Chats survive restarts.** Chats, their file lists and their search indexes are saved in a local `data/` folder.
 - **Tools when they help.** Gemini models can call a calculator and an optional web search (SerpApi or Tavily).
@@ -41,7 +41,7 @@ You have a stack of PDFs or recordings and want to ask them questions instead of
 
 ## Quick start
 
-**You need** Python 3.13 (the version the dependencies are pinned and tested on) and an API key from [Google AI Studio](https://aistudio.google.com/) (Gemini) or the [Anthropic Console](https://console.anthropic.com/) (Claude).
+**You need** Python 3.13 (the version the dependencies are pinned and tested on) and an API key from [Google AI Studio](https://aistudio.google.com/) (Gemini) or the [Anthropic Console](https://console.anthropic.com/) (Claude), or [Ollama](https://ollama.com) with a downloaded model (for example `ollama pull llama3.2`) to run without a key.
 
 **1. Get the code and install it** in a virtual environment:
 
@@ -53,7 +53,7 @@ source .venv/bin/activate        # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-**2. Add your key.** Copy the example settings file, open `.env` in a text editor and fill in `GOOGLE_API_KEY` or `ANTHROPIC_API_KEY`:
+**2. Add your key.** Copy the example settings file, open `.env` in a text editor and fill in `GOOGLE_API_KEY` or `ANTHROPIC_API_KEY`, or set `OLLAMA_MODELS=llama3.2` (the names of your downloaded Ollama models, comma-separated):
 
 ```sh
 cp .env.example .env
@@ -77,14 +77,18 @@ python server.py
 | Variable | What it does |
 | --- | --- |
 | `GOOGLE_API_KEY` | Gemini models and Google embeddings. |
-| `ANTHROPIC_API_KEY` | Claude models. At least one of these two keys is needed to chat. |
+| `ANTHROPIC_API_KEY` | Claude models. To chat you need one of these two keys or `OLLAMA_MODELS`. |
+| `OLLAMA_MODELS` | Local Ollama models to offer, comma-separated, for example `llama3.2,qwen2.5:7b`. They appear as `ollama/<name>`. |
+| `OLLAMA_BASE_URL` | Ollama's OpenAI-compatible endpoint. Default `http://localhost:11434/v1`. |
 | `VOYAGE_API_KEY`, `OPENAI_API_KEY` | Voyage or OpenAI embeddings. |
 | `SEARCH_PROVIDER` | Web search tool: `serpapi` (default, needs `SERPER_API_KEY`) or `tavily` (needs `TAVILY_API_KEY`). Optional. |
 | `CORAG_DATA_DIR` | Where chats and indexes are stored. Default `data`. |
 
-**Defaults.** The default model is `gemini-2.5-flash`, or `claude-haiku-4-5-20251001` when only an Anthropic key is set. The default embedding provider is the first with a key in the order Google, Voyage, OpenAI; with none, the local `sentence-transformers/all-MiniLM-L6-v2` model is used (downloaded on first use).
+**Defaults.** The default model is `gemini-2.5-flash`, or `claude-haiku-4-5-20251001` when only an Anthropic key is set, or the first `OLLAMA_MODELS` entry when neither cloud key is set. The default embedding provider is the first with a key in the order Google, Voyage, OpenAI; with none, the local `sentence-transformers/all-MiniLM-L6-v2` model is used (downloaded on first use).
 
-**Models in the picker** (`models_list` in [`config.py`](config.py)): `gemini-2.5-flash`, `gemini-2.5-pro`, `gemini-2.5-flash-lite`, `gemini-2.0-flash`, `gemini-flash-latest`, `gemini-pro-latest`, `claude-haiku-4-5-20251001`, `claude-sonnet-4-6`, `claude-opus-4-7`.
+**Models in the picker** (`models_list` in [`config.py`](config.py)): `gemini-2.5-flash`, `gemini-2.5-pro`, `gemini-2.5-flash-lite`, `gemini-2.0-flash`, `gemini-flash-latest`, `gemini-pro-latest`, `claude-haiku-4-5-20251001`, `claude-sonnet-4-6`, `claude-opus-4-7`, plus `ollama/<name>` for each `OLLAMA_MODELS` entry.
+
+**Ollama context window.** A CORAG prompt carries up to 20 passages of 1,000 characters plus chat history, and Ollama silently cuts prompts longer than its context window. If answers miss passages, start Ollama with a larger window, for example `OLLAMA_CONTEXT_LENGTH=16384 ollama serve`.
 
 **Embedding models** ([`retrieval/embeddings_router.py`](retrieval/embeddings_router.py)): Google `models/gemini-embedding-001`, Voyage `voyage-3-lite`, OpenAI `text-embedding-3-small`, local `sentence-transformers/all-MiniLM-L6-v2`. A chat keeps the embedding provider it started with; pick another one in a new chat.
 
@@ -113,7 +117,7 @@ The tests use fake embeddings and models, so they need no API keys.
 | --- | --- |
 | **Documents** | PDF text extraction with ligature and line-break cleanup; MP3 and WAV speech-to-text in segments of up to 45 seconds; several files per chat |
 | **Retrieval** | Question rephrased by the model, HNSW cosine search over 1,000-character chunks, top 20 re-sorted by similarity |
-| **Answers** | Nine Gemini and Claude models; prompts carry passages, file names and chat history, and ask the model to name its sources |
+| **Answers** | Nine Gemini and Claude models, or any local Ollama model; prompts carry passages, file names and chat history, and ask the model to name its sources |
 | **Embeddings** | Google, Voyage, OpenAI or a local sentence-transformers model |
 | **Tools** | Arithmetic-only calculator and web search via SerpApi or Tavily (Gemini models) |
 | **Chats** | Automatic chat names, chat list, per-chat documents, saved to disk between runs |
@@ -125,7 +129,7 @@ The tests use fake embeddings and models, so they need no API keys.
 </div>
 
 - An agent (`inference/inference_manager.py`) handles each question: it rephrases it, embeds it, pulls the closest passages from the chat's index and builds one prompt with the passages, file names and earlier messages.
-- Gemini models can call the calculator or web search; the tool output is added to the prompt and the model is asked again. Claude models get the prompt without tools.
+- Gemini models can call the calculator or web search; the tool output is added to the prompt and the model is asked again. Claude and Ollama models get the prompt without tools.
 - Retrieval always sends up to 20 passages, and answers are only as good as the extracted text: there is no OCR for scanned PDFs.
 
 More detail in [Architecture](docs/architecture.md).
@@ -138,15 +142,15 @@ This screenshot is from an earlier Streamlit version of CORAG. The current NiceG
 
 ## FAQ
 
-**Is it free?** The code is free under Apache-2.0. Google, Anthropic and the optional embedding and search providers bill API use under their own pricing.
+**Is it free?** The code is free under Apache-2.0. Google, Anthropic and the optional embedding and search providers bill API use under their own pricing. Ollama models at the default `OLLAMA_BASE_URL` run on your own computer at no charge.
 
-**Does my data leave my computer?** Yes, for answers: your question and the retrieved passages go to Gemini or Claude, and audio goes to Google's Web Speech service. Extracted text, chats and indexes are stored only in the local `data/` folder. With the local embedding model, document text is not sent anywhere for embedding.
+**Does my data leave my computer?** With Gemini or Claude, yes: your question and the retrieved passages go to that provider. With an Ollama model at the default `OLLAMA_BASE_URL` and the local embedding model, documents and questions stay on your computer. Audio always goes to Google's Web Speech service. Extracted text, chats and indexes are stored only in the local `data/` folder. With the local embedding model, document text is not sent anywhere for embedding.
 
 **Which files can I upload?** PDFs with a text layer, and MP3 or WAV audio (recordings longer than 60 minutes are refused). Scanned PDFs need OCR first.
 
 **Can I change the embedding provider in an existing chat?** No. Vectors from different providers cannot be mixed, so a chat keeps its first provider. Start a new chat to use another.
 
-**Why don't Claude models use the calculator or web search?** Tools are wired through LangChain for Gemini only; Claude gets a plain prompt.
+**Why don't Claude and Ollama models use the calculator or web search?** Tools are wired through LangChain for Gemini only; the other models get a plain prompt.
 
 **Can several people share one instance?** It is built as a single-user local app: every open browser tab sees the same chats.
 

@@ -102,3 +102,15 @@ def test_a_failed_rephrase_searches_with_the_question_as_asked(monkeypatch, capl
     agent.run("What is the launch code?", inference_model="gemini-2.5-flash")
     assert queries == ["What is the launch code?"]
     assert "quota exceeded" in caplog.text
+
+
+def test_ollama_models_get_the_plain_prompt_without_tools(monkeypatch):
+    sent = []
+    monkeypatch.setattr(im, "generate_response", lambda prompt, model: sent.append((model, prompt)) or "local answer")
+    index, chunks = ei.generate_embeddings("the launch code is zebra " * 5, source="notes.txt")
+    agent = im.initialize_agent("t", original_data=chunks, vectors=index, inference_model="ollama/llama3.2")
+    assert agent.llm is None and agent.llm_with_tools is None
+    assert agent.run("What is the launch code?", inference_model="ollama/llama3.2") == "local answer"
+    model, prompt = sent[0]
+    assert model == "ollama/llama3.2"
+    assert "[Source: notes.txt]" in prompt and "zebra" in prompt

@@ -10,6 +10,9 @@ SEARCH_PROVIDER = os.environ.get("SEARCH_PROVIDER", "serpapi")
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
 VOYAGE_API_KEY = os.environ.get("VOYAGE_API_KEY", "")
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
+# Local models served by Ollama (https://ollama.com): its OpenAI-compatible endpoint
+OLLAMA_BASE_URL = os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434/v1")
+OLLAMA_PREFIX = "ollama/"
 
 EMBEDDING_PROVIDERS = ["google", "voyage", "openai", "local"]
 
@@ -58,10 +61,21 @@ models_list = [
 ]
 
 
+def ollama_models(names):
+    """Turn a comma-separated list such as "llama3.2, qwen2.5:7b" into picker names."""
+    return [f"{OLLAMA_PREFIX}{name.strip()}" for name in names.split(",") if name.strip()]
+
+
+OLLAMA_MODELS = ollama_models(os.environ.get("OLLAMA_MODELS", ""))
+models_list += OLLAMA_MODELS
+
+
 def default_model():
-    """First Gemini model when a Google key exists, otherwise a Claude model if that key exists."""
+    """First Gemini model when a Google key exists, otherwise Claude if that key exists, otherwise Ollama."""
     if not GOOGLE_API_KEY and ANTHROPIC_API_KEY:
         return next(m for m in models_list if m.startswith("claude"))
+    if not GOOGLE_API_KEY and OLLAMA_MODELS:
+        return OLLAMA_MODELS[0]
     return models_list[0]
 
 
@@ -77,4 +91,5 @@ def default_embedding_provider():
 
 
 def has_any_llm_key():
-    return bool(GOOGLE_API_KEY or ANTHROPIC_API_KEY)
+    """True when some model can answer: a Gemini or Claude key, or a local Ollama model."""
+    return bool(GOOGLE_API_KEY or ANTHROPIC_API_KEY or OLLAMA_MODELS)
