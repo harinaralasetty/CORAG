@@ -530,7 +530,7 @@ def build() -> None:
 
     if not config.has_any_llm_key():
         ui.notify('No model available. Add GOOGLE_API_KEY or ANTHROPIC_API_KEY to your .env file, '
-                  'or list local Ollama models in OLLAMA_MODELS (see .env.example).',
+                  'or list local Ollama models in CORAG_OLLAMA_MODELS (see .env.example).',
                   type='warning', timeout=0, close_button=True)
 
     # Footer: chat input (pill style, send icon inside)
