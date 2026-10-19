@@ -53,7 +53,7 @@ source .venv/bin/activate        # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-**2. Add your key.** Copy the example settings file, open `.env` in a text editor and fill in `GOOGLE_API_KEY` or `ANTHROPIC_API_KEY`, or set `OLLAMA_MODELS=llama3.2` (the names of your downloaded Ollama models, comma-separated):
+**2. Add your key.** Copy the example settings file, open `.env` in a text editor and fill in `GOOGLE_API_KEY` or `ANTHROPIC_API_KEY`, or set `CORAG_OLLAMA_MODELS=llama3.2` (the names of your downloaded Ollama models, comma-separated):
 
 ```sh
 cp .env.example .env
@@ -86,16 +86,16 @@ Chats, indexes and the downloaded local embedding model are kept in the `corag-d
 | Variable | What it does |
 | --- | --- |
 | `GOOGLE_API_KEY` | Gemini models and Google embeddings. |
-| `ANTHROPIC_API_KEY` | Claude models. To chat you need one of these two keys or `OLLAMA_MODELS`. |
-| `OLLAMA_MODELS` | Local Ollama models to offer, comma-separated, for example `llama3.2,qwen2.5:7b`. They appear as `ollama/<name>`. |
+| `ANTHROPIC_API_KEY` | Claude models. To chat you need one of these two keys or `CORAG_OLLAMA_MODELS`. |
+| `CORAG_OLLAMA_MODELS` | Local Ollama models to offer, comma-separated, for example `llama3.2,qwen2.5:7b`. They appear as `ollama/<name>`. Not `OLLAMA_MODELS`, which Ollama itself reads as its model folder. |
 | `OLLAMA_BASE_URL` | Ollama's OpenAI-compatible endpoint. Default `http://localhost:11434/v1`. |
 | `VOYAGE_API_KEY`, `OPENAI_API_KEY` | Voyage or OpenAI embeddings. |
 | `SEARCH_PROVIDER` | Web search tool: `serpapi` (default, needs `SERPER_API_KEY`) or `tavily` (needs `TAVILY_API_KEY`). Optional. |
 | `CORAG_DATA_DIR` | Where chats and indexes are stored. Default `data`. |
 
-**Defaults.** The default model is `gemini-2.5-flash`, or `claude-haiku-4-5-20251001` when only an Anthropic key is set, or the first `OLLAMA_MODELS` entry when neither cloud key is set. The default embedding provider is the first with a key in the order Google, Voyage, OpenAI; with none, the local `sentence-transformers/all-MiniLM-L6-v2` model is used (downloaded on first use).
+**Defaults.** The default model is `gemini-2.5-flash`, or `claude-haiku-4-5-20251001` when only an Anthropic key is set, or the first `CORAG_OLLAMA_MODELS` entry when neither cloud key is set. The default embedding provider is the first with a key in the order Google, Voyage, OpenAI; with none, the local `sentence-transformers/all-MiniLM-L6-v2` model is used (downloaded on first use).
 
-**Models in the picker** (`models_list` in [`config.py`](config.py)): `gemini-2.5-flash`, `gemini-2.5-pro`, `gemini-2.5-flash-lite`, `gemini-2.0-flash`, `gemini-flash-latest`, `gemini-pro-latest`, `claude-haiku-4-5-20251001`, `claude-sonnet-4-6`, `claude-opus-4-7`, plus `ollama/<name>` for each `OLLAMA_MODELS` entry.
+**Models in the picker** (`models_list` in [`config.py`](config.py)): `gemini-2.5-flash`, `gemini-2.5-pro`, `gemini-2.5-flash-lite`, `gemini-2.0-flash`, `gemini-flash-latest`, `gemini-pro-latest`, `claude-haiku-4-5-20251001`, `claude-sonnet-4-6`, `claude-opus-4-7`, plus `ollama/<name>` for each `CORAG_OLLAMA_MODELS` entry.
 
 **Ollama context window.** A CORAG prompt carries up to 20 passages of 1,000 characters plus chat history, and Ollama silently cuts prompts longer than its context window. If answers miss passages, start Ollama with a larger window, for example `OLLAMA_CONTEXT_LENGTH=16384 ollama serve`.
 

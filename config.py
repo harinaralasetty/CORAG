@@ -66,7 +66,8 @@ def ollama_models(names):
     return [f"{OLLAMA_PREFIX}{name.strip()}" for name in names.split(",") if name.strip()]
 
 
-OLLAMA_MODELS = ollama_models(os.environ.get("OLLAMA_MODELS", ""))
+# Not OLLAMA_MODELS: Ollama itself reads that variable as the folder where it stores models
+OLLAMA_MODELS = ollama_models(os.environ.get("CORAG_OLLAMA_MODELS", ""))
 models_list += OLLAMA_MODELS
 
 

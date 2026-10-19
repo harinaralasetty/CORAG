@@ -99,3 +99,16 @@ def test_cloud_keys_win_over_ollama_for_the_default(monkeypatch):
 def test_configured_ollama_models_are_in_the_picker():
     assert all(model in config.models_list for model in config.OLLAMA_MODELS)
     assert config.models_list[:1] == ["gemini-2.5-flash"]
+
+
+def test_models_come_from_corag_ollama_models_not_ollamas_own_variable():
+    # Ollama reads OLLAMA_MODELS as its model folder; a path there must not become a picker entry
+    import os
+    import subprocess
+    import sys
+    env = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
+    env.update(CORAG_OLLAMA_MODELS="llama3.2", OLLAMA_MODELS="/Users/someone/.ollama/models")
+    out = subprocess.run([sys.executable, "-c", "import config; print(config.OLLAMA_MODELS)"],
+                         cwd=os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                         env=env, capture_output=True, text=True, check=True).stdout.strip()
+    assert out == "['ollama/llama3.2']"
