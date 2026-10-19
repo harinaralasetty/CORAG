@@ -32,7 +32,7 @@ python server.py                  # open http://localhost:8080
 
 You have a stack of PDFs or recordings and want to ask them questions instead of scrolling through them.
 
-- **Ask across several files.** Add as many PDFs or MP3 and WAV recordings to a chat as you like and ask about them together. Every passage is labelled with its file name, so answers can say where they came from.
+- **Ask across several files.** Add as many PDFs, text or Markdown files, or MP3 and WAV recordings to a chat as you like and ask about them together. Every passage is labelled with its file name, so answers can say where they came from.
 - **Pick your model.** Switch between Gemini, Claude and local Ollama models from a dropdown, per question.
 - **Embeddings without a key.** Use Google, Voyage or OpenAI embeddings, or a local sentence-transformers model that needs no API key.
 - **Chats survive restarts.** Chats, their file lists and their search indexes are saved in a local `data/` folder.
@@ -65,7 +65,7 @@ cp .env.example .env
 python server.py
 ```
 
-**4. Use it.** Drop a PDF, MP3 or WAV file into the **Documents** panel on the right, wait for "Processed", then type a question. Pick the model and embedding provider in the left panel; start a new chat with **+**.
+**4. Use it.** Drop a PDF, TXT, Markdown, MP3 or WAV file into the **Documents** panel on the right, wait for "Processed", then type a question. Pick the model and embedding provider in the left panel; start a new chat with **+**.
 
 **Or run it with Docker**, with no Python setup: clone the repository, create `.env` as in step 2, then build and start the container and open [http://localhost:8080](http://localhost:8080):
 
@@ -124,7 +124,7 @@ The tests use fake embeddings and models, so they need no API keys.
 
 | Area | Details |
 | --- | --- |
-| **Documents** | PDF text extraction with ligature and line-break cleanup; MP3 and WAV speech-to-text in segments of up to 45 seconds; several files per chat |
+| **Documents** | PDF text extraction with ligature and line-break cleanup; plain text and Markdown (UTF-8); MP3 and WAV speech-to-text in segments of up to 45 seconds; several files per chat |
 | **Retrieval** | Question rephrased by the model, HNSW cosine search over 1,000-character chunks, top 20 re-sorted by similarity |
 | **Answers** | Nine Gemini and Claude models, or any local Ollama model; prompts carry passages, file names and chat history, and ask the model to name its sources |
 | **Embeddings** | Google, Voyage, OpenAI or a local sentence-transformers model |
@@ -155,7 +155,7 @@ This screenshot is from an earlier Streamlit version of CORAG. The current NiceG
 
 **Does my data leave my computer?** With Gemini or Claude, yes: your question and the retrieved passages go to that provider. With an Ollama model at the default `OLLAMA_BASE_URL` and the local embedding model, documents and questions stay on your computer. Audio always goes to Google's Web Speech service. Extracted text, chats and indexes are stored only in the local `data/` folder. With the local embedding model, document text is not sent anywhere for embedding.
 
-**Which files can I upload?** PDFs with a text layer, and MP3 or WAV audio (recordings longer than 60 minutes are refused). Scanned PDFs need OCR first.
+**Which files can I upload?** PDFs with a text layer, `.txt` and `.md` files in UTF-8, and MP3 or WAV audio (recordings longer than 60 minutes are refused). Scanned PDFs need OCR first.
 
 **Can I change the embedding provider in an existing chat?** No. Vectors from different providers cannot be mixed, so a chat keeps its first provider. Start a new chat to use another.
 

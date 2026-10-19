@@ -24,6 +24,7 @@ from cosmetics import get_random_greeting
 from inference.inference_manager import process_answer, process_embeddings
 from preprocessing.audio_processor import transcribe_audio
 from preprocessing.pdf_processor import process_pdf
+from preprocessing.text_processor import process_text
 from preprocessing.prompt_processor import chat_namer
 from retrieval.index_store import load_thread_index, save_thread_index
 
@@ -190,6 +191,8 @@ async def handle_upload(e) -> None:
         if name_lower.endswith('.pdf'):
             file_like = io.BytesIO(content)
             extracted_text, theme = await asyncio.to_thread(process_pdf, file_like)
+        elif name_lower.endswith(('.txt', '.md')):
+            extracted_text, theme = process_text(content)
         elif name_lower.endswith(('.mp3', '.wav')):
             suffix = '.wav' if name_lower.endswith('.wav') else '.mp3'
             with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
@@ -514,8 +517,8 @@ def build() -> None:
             multiple=True,
             auto_upload=True,
             max_file_size=200_000_000,
-            label='Drop PDF / MP3 / WAV',
-        ).classes('w-full').props('accept=".pdf,.mp3,.wav" flat color=grey-7')
+            label='Drop PDF / TXT / MD / MP3 / WAV',
+        ).classes('w-full').props('accept=".pdf,.txt,.md,.mp3,.wav" flat color=grey-7')
         ui.separator().classes('q-my-md')
         with ui.column().classes('w-full gap-2'):
             docs_list()

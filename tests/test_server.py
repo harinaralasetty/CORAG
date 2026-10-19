@@ -318,3 +318,37 @@ async def test_a_failed_model_call_shows_an_error_not_a_reply(user: User, monkey
     answer = finished_answer("unlucky question")[1]
     assert answer.startswith("**Error:**") and "quota exceeded" in answer
     assert os.environ["GOOGLE_API_KEY"] not in answer
+
+
+def thread_with(*names):
+    """The saved chat whose documents include all the given file names (earlier tests leave chats behind)."""
+    for thread in read_threads().values():
+        if set(names) <= {f["name"] for f in thread.get("processed_files", [])}:
+            return thread
+    return None
+
+
+async def test_text_and_markdown_files_are_searchable(user: User, monkeypatch):
+    install_fakes(monkeypatch)
+    await user.open("/")
+    element = user.find(ui.upload).elements.pop()
+    await element.handle_uploads([
+        SmallFileUpload(name="notes.md", content_type="text/markdown",
+                        _data="\ufeff# Notes\n\nKoalas sleep in eucalyptus trees.".encode("utf-8")),
+    ])
+    await wait_for(lambda: thread_with("notes.md"))
+    await element.handle_uploads([
+        SmallFileUpload(name="list.txt", content_type="text/plain", _data=b"Otters hold hands while sleeping."),
+    ])
+    await wait_for(lambda: thread_with("notes.md", "list.txt"))
+
+    question = "Where do koalas and otters sleep?"
+    user.find(ui.input).type(question).trigger("keydown.enter")
+
+    def answer():
+        return next((m["answer"] for m in thread_with("notes.md", "list.txt")["messages"]
+                     if m["user"] == question and m["answer"].startswith("REPLY|")), None)
+
+    await wait_for(answer)
+    assert "[Source: notes.md]" in answer() and "eucalyptus" in answer()
+    assert "[Source: list.txt]" in answer() and "Otters" in answer()

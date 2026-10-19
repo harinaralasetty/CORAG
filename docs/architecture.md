@@ -9,6 +9,7 @@ CORAG is a single-user local web app. `server.py` builds the NiceGUI interface a
 | `server.py` | NiceGUI page: model and embedding pickers, chat list, document panel, chat input. Serves on port 8080. |
 | `config.py` | Reads `.env`; chunk and HNSW settings, model list, data folder, prompt files. |
 | `preprocessing/pdf_processor.py` | Extracts PDF text with PyPDF2 and cleans ligatures and broken lines. |
+| `preprocessing/text_processor.py` | Decodes `.txt` and `.md` uploads as UTF-8. |
 | `preprocessing/audio_processor.py` | Transcribes audio with SpeechRecognition's Google Web Speech recogniser. |
 | `preprocessing/prompt_processor.py` | Rephrases questions and names chats with the selected model. |
 | `retrieval/embeddings_router.py` | One adapter per embedding provider: Google, Voyage, OpenAI, local sentence-transformers. |
@@ -24,8 +25,8 @@ CORAG is a single-user local web app. `server.py` builds the NiceGUI interface a
 
 ## Adding a file
 
-1. The upload box accepts `.pdf`, `.mp3` and `.wav`, up to 200 MB each. Uploading into an empty view creates a new chat.
-2. PDFs are read with PyPDF2. WAV goes straight to `speech_recognition.AudioFile`; MP3 is first decoded in memory to 16-bit WAV with `soundfile`, which bundles libsndfile, so no ffmpeg is needed. Recordings longer than 60 minutes are refused, MP3 before it is decoded and WAV from its header. Transcription calls Google's Web Speech service over the network, one request per segment of up to 45 seconds, because the free service rejects or cuts off long requests; segments with no recognisable speech are skipped and the texts are joined with spaces.
+1. The upload box accepts `.pdf`, `.txt`, `.md`, `.mp3` and `.wav`, up to 200 MB each. Uploading into an empty view creates a new chat.
+2. PDFs are read with PyPDF2. Text and Markdown files are decoded as UTF-8 (`preprocessing/text_processor.py`): a byte-order mark is dropped and invalid bytes are replaced. WAV goes straight to `speech_recognition.AudioFile`; MP3 is first decoded in memory to 16-bit WAV with `soundfile`, which bundles libsndfile, so no ffmpeg is needed. Recordings longer than 60 minutes are refused, MP3 before it is decoded and WAV from its header. Transcription calls Google's Web Speech service over the network, one request per segment of up to 45 seconds, because the free service rejects or cuts off long requests; segments with no recognisable speech are skipped and the texts are joined with spaces.
 3. The first 2,000 characters become the chat's "document theme", used later to rephrase questions.
 4. Text is split into 1,000-character chunks with 200 characters of overlap (`CHUNK_SETTINGS` in `config.py`).
 5. Chunks are embedded in batches of 100 with the chat's embedding provider. A chat keeps the provider it started with, because vectors from different providers cannot be mixed.
