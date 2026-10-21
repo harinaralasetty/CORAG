@@ -121,6 +121,38 @@ The tests use fake embeddings and models, so they need no API keys.
 
 </details>
 
+## Legacy Indic PDFs
+
+Some Telugu PDFs store glyph IDs in embedded Identity-H fonts without a
+ToUnicode map. Others use legacy Hindi or Marathi fonts such as Kruti Dev,
+Shree-Dev or DVB-TT. Install optional recovery in your CORAG environment:
+
+```sh
+python -m pip install -r requirements-indic.txt
+python server.py
+```
+
+Then upload the PDF through Documents. CORAG checks each page for broken text
+or legacy fonts, runs [indic-legacy-pdf](https://github.com/harinaralasetty/indic-legacy-pdf)
+on suspect pages and keeps PDF page citations. Documents shows "Telugu text
+recovered" for Telugu, or "Indic text recovered" for other supported scripts.
+The extraction method and recovery warnings appear in the server log.
+
+Recovery supports embedded Telugu Identity-H glyph fonts and the converter's
+built-in Hindi/Marathi legacy mappings. Font coverage and layout affect accuracy;
+review recovered text, especially complex columns and ambiguous glyphs. Readable
+English and Unicode Indic pages keep the existing extraction path. Missing
+optional dependencies, failed recovery or output without improved Indic text
+retain the original PyPDF2 extraction. This path does not run OCR or translate
+text. Scanned PDFs still need OCR first. The default Docker image omits this
+optional dependency.
+
+To run the offline synthetic example after installing recovery:
+
+```sh
+python scripts/demo_indic_pdf.py
+```
+
 ## What it does
 
 | Area | Details |

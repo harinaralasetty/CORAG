@@ -7,7 +7,7 @@ class FakePage:
     def __init__(self, text):
         self.text = text
 
-    def extract_text(self):
+    def extract_text(self, **kwargs):
         return self.text
 
 

@@ -1,0 +1,3 @@
+# Optional recovery, installed in addition to requirements.txt.
+# Pin the indic-legacy-pdf fork: PyPI's legacylipi may not expose glyph recovery.
+legacylipi[glyph] @ git+https://github.com/harinaralasetty/indic-legacy-pdf.git@6043fd5ed7a4448bbe94c77e7cf36ff096d07334

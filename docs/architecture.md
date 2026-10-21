@@ -8,7 +8,8 @@ CORAG is a single-user local web app. `server.py` builds the NiceGUI interface a
 | --- | --- |
 | `server.py` | NiceGUI page: model and embedding pickers, chat list, document panel, chat input. Serves on port 8080. |
 | `config.py` | Reads `.env`; chunk and HNSW settings, model list, data folder, prompt files. |
-| `preprocessing/pdf_processor.py` | Extracts PDF text with PyPDF2 and cleans ligatures and broken lines. |
+| `preprocessing/pdf_processor.py` | Extracts PDF text, detects suspect Indic pages and cleans text while retaining page offsets. |
+| `preprocessing/indic_pdf.py` | Optional indic-legacy-pdf adapter; recovers selected pages and reports methods. |
 | `preprocessing/text_processor.py` | Decodes `.txt` and `.md` uploads as UTF-8. |
 | `preprocessing/audio_processor.py` | Transcribes audio with SpeechRecognition's Google Web Speech recogniser. |
 | `preprocessing/prompt_processor.py` | Rephrases questions and names chats with the selected model. |
@@ -32,6 +33,46 @@ CORAG is a single-user local web app. `server.py` builds the NiceGUI interface a
 5. Chunks are embedded in batches of 100 with the chat's embedding provider. A chat keeps the provider it started with, because vectors from different providers cannot be mixed.
 6. Vectors go into an `hnswlib` cosine index (`M=30`, `ef_construction=500`), which grows as files are added. Each stored chunk is prefixed with `[Source: <file name>]` so answers can cite it; PDF chunks add the page, `[Source: <file name>, page 3]` or `pages 3-4` when a chunk crosses a page break. The PDF cleanup keeps an offset map (`clean_with_offsets` in `preprocessing/pdf_processor.py`) so page starts are exact in the cleaned text. The page is the page's position in the file, which can differ from the number printed on it (for example after roman-numeral front matter). Chats indexed before this change keep their old labels.
 7. The index and chunks are saved under `data/<chat id>/`, and the chat record under `data/chat_threads_info.json`.
+
+## Legacy Indic PDFs
+
+Install with `python -m pip install -r requirements-indic.txt`, then run
+`python server.py` and upload a PDF. The optional requirements pin the
+indic-legacy-pdf fork and its `glyph` extra. Normal installs and the default
+Docker image do not need it.
+
+After PyPDF2 extraction, `likely_broken_indic` checks each page. Readable Indic
+Unicode takes precedence over font names. A high share of Latin-1 or private-use
+characters, known legacy font names, or Telugu Identity-H/V fonts without
+ToUnicode can trigger recovery. PyPDF2's text visitor reports fonts actually used by extracted text, including
+Form text, so unused legacy font resources do not trigger recovery. Ordinary English and proper Unicode
+Telugu pages bypass the converter.
+
+The adapter imports the library lazily and writes the uploaded bytes to a private
+temporary PDF because embedded-font recovery requires a file path. It uses
+`PDFParser`, `EncodingDetector.detect_from_document` and
+`UnicodeConverter.convert_with_recovery`. This supports Telugu glyph-ID recovery
+and built-in legacy mappings such as Kruti Dev, Shree-Dev and DVB-TT for
+Hindi/Marathi. It makes no OCR, translation or network requests. The temporary
+file is deleted even on failure.
+
+Only suspect pages with more Indic Unicode and at most 5% replacement characters
+replace their PyPDF2 text. Other pages retain their original extraction. Cleanup
+and page-start offset mapping run after replacement, so blank pages and chunk
+citations keep their original page numbers. Import/conversion errors and
+unhelpful output fall back to PyPDF2; methods and converter warnings are logged.
+Glyph ambiguity and approximate reading order can still affect recovered text.
+
+`process_pdf` keeps its three-value return contract. The upload handler passes a
+per-upload `recovery_info` dictionary, then stores its label, methods and 1-based
+page numbers in the file record under `processed_files[].recovery`. Documents
+renders the saved label after uploads and restarts. Older file records have no
+recovery field and continue to render normally.
+
+`python scripts/demo_indic_pdf.py` exercises the original synthetic fixture,
+recovery, chunking, HNSW search and page citations offline. Tests also cover the
+missing-library path, conversion failures and unmodified readable PDFs. The
+fixture font and PDF content are generated locally; no external PDFs are used.
 
 ## Asking a question
 
