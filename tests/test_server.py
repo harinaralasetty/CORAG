@@ -352,3 +352,49 @@ async def test_text_and_markdown_files_are_searchable(user: User, monkeypatch):
     await wait_for(answer)
     assert "[Source: notes.md]" in answer() and "eucalyptus" in answer()
     assert "[Source: list.txt]" in answer() and "Otters" in answer()
+
+
+async def test_recovered_pdf_status_is_saved_and_its_pages_are_searchable(user: User, monkeypatch):
+    from fixtures.pdf_factory import broken_telugu_pdf
+    from preprocessing import pdf_processor
+
+    install_fakes(monkeypatch)
+    monkeypatch.setitem(config.CHUNK_SETTINGS, "CHUNK_SIZE", 4)
+    monkeypatch.setitem(config.CHUNK_SETTINGS, "CHUNK_OVERLAP", 0)
+    # Only the optional library is substituted; extraction, cleanup, upload,
+    # indexing, persistence and the Documents panel all run normally.
+    monkeypatch.setattr(pdf_processor, "recover_indic_pages", lambda *args: (
+        ["అ ఆ", "", "ఇ ఈ"],
+        {"label": "Telugu text recovered", "methods": ["legacylipi/glyph-id"], "pages": [1, 3]},
+    ))
+    monkeypatch.setattr(pp, "generate_response", lambda *args: "Synthetic Telugu Chat")
+    await user.open("/")
+    element = user.find(ui.upload).elements.pop()
+    await element.handle_uploads([SmallFileUpload(
+        name="synthetic-telugu.pdf", content_type="application/pdf", _data=broken_telugu_pdf(),
+    )])
+    await wait_for(lambda: thread_with("synthetic-telugu.pdf"))
+    await user.should_see("Telugu text recovered")
+    info = thread_with("synthetic-telugu.pdf")["processed_files"][0]["recovery"]
+    assert info["methods"] == ["legacylipi/glyph-id"] and info["pages"] == [1, 3]
+
+    user.find(ui.input).type("Show the recovered vowels").trigger("keydown.enter")
+
+    def recovered_answer():
+        return next((m["answer"] for m in thread_with("synthetic-telugu.pdf")["messages"]
+                     if m["user"] == "Show the recovered vowels" and m["answer"].startswith("REPLY|")), None)
+
+    await wait_for(recovered_answer)
+    assert "[Source: synthetic-telugu.pdf, page 3]" in recovered_answer() and "ఇ ఈ" in recovered_answer()
+
+
+async def test_recovery_status_survives_a_restart(user: User, monkeypatch):
+    install_fakes(monkeypatch)
+    await user.open("/")
+    # New NiceGUI simulation reloads server.py and its saved chat records.
+    for tid, thread in read_threads().items():
+        if any(f["name"] == "synthetic-telugu.pdf" for f in thread.get("processed_files", [])):
+            user.find(content=thread["name"]).click()
+            break
+    await user.should_see("synthetic-telugu.pdf")
+    await user.should_see("Telugu text recovered")

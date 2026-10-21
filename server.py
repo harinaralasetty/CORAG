@@ -29,6 +29,11 @@ from preprocessing.prompt_processor import chat_namer
 from retrieval.index_store import load_thread_index, save_thread_index
 
 
+# Show ingestion methods in the server log without enabling verbose provider logs.
+logging.basicConfig()
+logging.getLogger('preprocessing').setLevel(logging.INFO)
+
+
 # ---------- App state (single-user local app) ----------
 class State:
     chat_threads = load_chat_threads_info()
@@ -153,6 +158,8 @@ def docs_list() -> None:
         with ui.card().classes('w-full q-mb-sm'):
             ui.label(f['name']).classes('font-semibold text-sm')
             ui.label(f['type']).classes('text-xs text-grey-6')
+            if f.get('recovery'):
+                ui.label(f['recovery']['label']).classes('text-xs text-positive')
 
 
 # ---------- File upload ----------
@@ -188,10 +195,13 @@ async def handle_upload(e) -> None:
         content = await file.read()
         name_lower = name.lower()
 
+        recovery_info = {}
         page_starts = None  # PDFs only: where each page begins, so passages can cite their page
         if name_lower.endswith('.pdf'):
             file_like = io.BytesIO(content)
-            extracted_text, theme, page_starts = await asyncio.to_thread(process_pdf, file_like)
+            extracted_text, theme, page_starts = await asyncio.to_thread(
+                process_pdf, file_like, recovery_info=recovery_info,
+            )
         elif name_lower.endswith(('.txt', '.md')):
             extracted_text, theme = process_text(content)
         elif name_lower.endswith(('.mp3', '.wav')):
@@ -229,7 +239,10 @@ async def handle_upload(e) -> None:
             S.text_per_thread[tid] = chunks
             save_thread_index(config.DATA_DIR, tid, index, chunks)
 
-        thread.setdefault('processed_files', []).append({'name': name, 'type': content_type})
+        file_info = {'name': name, 'type': content_type}
+        if recovery_info:
+            file_info['recovery'] = recovery_info
+        thread.setdefault('processed_files', []).append(file_info)
         thread['document_theme'] = theme
         thread['embedding_provider'] = provider
         save_chat_threads_info(S.chat_threads)
